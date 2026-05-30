@@ -10,13 +10,13 @@ namespace PasswordManager.Models
     {
         public long Id { get; set; }
         public string Url { get; set; }
-
         public string ImageUrl { get; set; }
-
-        public Cache(string url,string imageUrl)
+        public string Title { get; set; }
+        public Cache(string url,string imageUrl, string title)
         {
             this.Url = url;
             this.ImageUrl = imageUrl;
+            Title = title;
         }
     }
 }

@@ -15,10 +15,12 @@ namespace PasswordManager.Services
     public class WebsiteData
     {
         public BitmapImage Image { get; set; }
+        public string Titile { get; set; }
 
-        public WebsiteData(BitmapImage image)
+        public WebsiteData(BitmapImage image,string title)
         {
             Image = image;
+            Titile = title;
         }
     }
 }
