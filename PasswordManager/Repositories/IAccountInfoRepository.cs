@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace PasswordManager.Repositories
 {
-    internal interface AccountInfoRepository
+    internal interface IAccountInfoRepository
     {
         IEnumerable<AccountInfo> GetAll();
         IEnumerable<AccountInfo> GetByUrl(string url);
-        AccountInfo GetById(int id);
+        AccountInfo GetById(long id);
         void Create(AccountInfo accountInfo);
-        void Delete(int id);
+        void DeleteById(long id);
         void DeleteByUrl(string url);
         void Update(AccountInfo accountInfo);
     }

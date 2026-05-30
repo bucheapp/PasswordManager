@@ -6,7 +6,7 @@ namespace PasswordManager.Services
     internal interface IAppSettingsService
     {
         void Save(AppSettings appSettings);
-        AppSettings Load();
+        AppSettings? Load();
     }
 
     public class  AppSettings

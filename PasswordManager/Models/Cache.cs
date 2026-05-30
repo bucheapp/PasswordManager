@@ -14,8 +14,8 @@ namespace PasswordManager.Models
         public string Title { get; set; }
         public Cache(string url,string imageUrl, string title)
         {
-            this.Url = url;
-            this.ImageUrl = imageUrl;
+            Url = url;
+            ImageUrl = imageUrl;
             Title = title;
         }
     }

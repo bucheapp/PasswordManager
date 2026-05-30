@@ -9,10 +9,10 @@ namespace PasswordManager.Services
 {
     internal interface IUserService
     {
-        void Create(User user);
-        void Delete(String name);
-        void Update(User user);
+        void Create(User user, string password);
+        void Delete(string name);
+        void Update(User user, string password);
         List<User> GetAll();
-        User Get(long id);
+        User Get(string name);
     }
 }

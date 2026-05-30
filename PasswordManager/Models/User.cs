@@ -10,11 +10,11 @@ namespace PasswordManager.Models
     {
         public string Name { get; set; }
         public bool IsDefault { get; set; }
-
+        public int Index { get; set; }
         public User(string name,bool isDefault)
         {
-            this.Name = name;
-            this.IsDefault = isDefault;
+            Name = name;
+            IsDefault = isDefault;
         }
     }
 }

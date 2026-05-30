@@ -20,7 +20,7 @@ namespace PasswordManager.Models
         public string? Name { get; set; }
         public string? Email { get; set; }
         public AuthType AuthType { get; set; }
-        public int index { get; set; }
+        public int Index { get; set; }
 
         public AccountInfo(string url, string? name, string? email, AuthType authType)
         {
