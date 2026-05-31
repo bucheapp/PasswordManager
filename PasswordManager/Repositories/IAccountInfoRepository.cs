@@ -11,7 +11,8 @@ namespace PasswordManager.Repositories
     {
         IEnumerable<AccountInfo> GetAll();
         IEnumerable<AccountInfo> GetByUrl(string url);
-        AccountInfo GetById(long id);
+        AccountInfo? GetById(long id);
+        AccountInfo? GetByName(string name);
         void Create(AccountInfo accountInfo);
         void DeleteById(long id);
         void DeleteByUrl(string url);

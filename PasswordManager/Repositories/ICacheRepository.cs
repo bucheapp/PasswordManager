@@ -10,7 +10,7 @@ namespace PasswordManager.Repositories
     internal interface ICacheRepository
     {
         IEnumerable<Cache> GetAll();
-        Cache GetByUrl(string url);
+        Cache? GetByUrl(string url);
         void Create(Cache cache);
         void DeleteAll();
     }

@@ -20,6 +20,12 @@ namespace PasswordManager.Services
         public void Add(WebsiteData websiteData)
         {
             string url = websiteData.Url;
+
+            if (_cacheRepository.GetByUrl(url) != null)
+            {
+                throw new InvalidOperationException("This URL already exists.");
+            }
+
             Uri uri = new Uri(url);
             string result = uri.GetLeftPart(UriPartial.Authority);
 
@@ -67,7 +73,7 @@ namespace PasswordManager.Services
             return path;
         }
 
-        public Cache Load(string url)
+        public Cache? Load(string url)
         {
             return _cacheRepository.GetByUrl(url);
         }

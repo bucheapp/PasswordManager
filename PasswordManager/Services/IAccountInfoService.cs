@@ -12,9 +12,9 @@ namespace PasswordManager.Services
     {
         void Create(AccountInfo accountInfo);
         void Delete(long id);
-        void Delete(String url);
+        void Delete(string url);
         void Update(AccountInfo accountInfo);
         List<AccountInfo> GetAll();
-        AccountInfo Get(long id);
+        AccountInfo? Get(long id);
     }
 }

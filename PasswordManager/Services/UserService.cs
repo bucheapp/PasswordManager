@@ -22,6 +22,10 @@ namespace PasswordManager.Services
         public void Create(User user,string password)
         {
             checkValidation(user,password);
+            if(_userRepository.GetByName(user.Name) != null) {
+                throw new InvalidOperationException("A user with the same name already exists.");
+            }
+
             _userRepository.Create(user);
         }
 
@@ -29,7 +33,7 @@ namespace PasswordManager.Services
         {
             _userRepository.DeleteByName(name);
         }
-        public User Get(string name)
+        public User? Get(string name)
         {
             return _userRepository.GetByName(name);
         }
@@ -41,6 +45,12 @@ namespace PasswordManager.Services
         public void Update(User user,string password)
         {
             checkValidation(user, password);
+            
+            if (_userRepository.GetByName(user.Name) != null)
+            {
+                throw new InvalidOperationException("A user with the same name already exists.");
+            }
+
             _userRepository.Update(user);
         }
 
