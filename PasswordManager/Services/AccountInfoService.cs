@@ -17,30 +17,42 @@ namespace PasswordManager.Services
             _accountInfoRepository = accountInfoRepository;
         }
 
-        void Create(AccountInfo accountInfo)
+        public void Create(AccountInfo accountInfo)
         {
             checkValidation(accountInfo);
+
+            if(_accountInfoRepository.GetByName(accountInfo.Name) != null)
+            {
+                throw new InvalidOperationException("A accountInfo with the same name already exists.");
+            }
+
             _accountInfoRepository.Create(accountInfo);
         }
-        void Delete(long id)
+        public void Delete(long id)
         {
             _accountInfoRepository.DeleteById(id);
         }
-        void Delete(String url)
+        public void Delete(string url)
         {
             _accountInfoRepository.DeleteByUrl(url);
         }
-        void Update(AccountInfo accountInfo)
+        public void Update(AccountInfo accountInfo)
         {
             checkValidation(accountInfo);
+
+            if (_accountInfoRepository.GetByName(accountInfo.Name) != null)
+            {
+                throw new InvalidOperationException("A accountInfo with the same name already exists.");
+            }
+
             _accountInfoRepository.Update(accountInfo);
         }
-        List<AccountInfo> GetAll()
+        public List<AccountInfo> GetAll()
         {
             IEnumerable<AccountInfo> accountInfos = _accountInfoRepository.GetAll();
             return accountInfos.ToList();
         }
-        AccountInfo Get(long id)
+        public AccountInfo? Get(long id)
         {
             return _accountInfoRepository.GetById(id);
         }
@@ -52,7 +64,20 @@ namespace PasswordManager.Services
                 throw new ArgumentNullException(nameof(accountInfo));
             }
 
+            if(accountInfo.AuthType == AuthType.UsernamePassword
+                ||
+                accountInfo.AuthType == AuthType.EmailPassword)
+            {
+                if (string.IsNullOrWhiteSpace(accountInfo.Name))
+                {
+                    throw new ArgumentException("User name cannot be blank.");
+                }
 
+                if (string.IsNullOrWhiteSpace(accountInfo.Password))
+                {
+                    throw new ArgumentException("Password cannot be blank.");
+                }
+            }
         }
     }
 }

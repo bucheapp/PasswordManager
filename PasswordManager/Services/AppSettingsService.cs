@@ -20,10 +20,9 @@ namespace PasswordManager.Services
         }
         public AppSettings? Load()
         {
-            if (File.Exists(AppSettingsFileName) {
+            if (File.Exists(AppSettingsFileName)) {
                 string json = File.ReadAllText(AppSettingsFileName);
                 return JsonSerializer.Deserialize<AppSettings>(json);
-
             } else {
                 AppSettings appSettings = new AppSettings();
                 appSettings.Width = 800;

@@ -13,6 +13,6 @@ namespace PasswordManager.Services
         void Delete(string name);
         void Update(User user, string password);
         List<User> GetAll();
-        User Get(string name);
+        User? Get(string name);
     }
 }

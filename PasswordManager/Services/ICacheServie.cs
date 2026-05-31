@@ -11,7 +11,7 @@ namespace PasswordManager.Services
     internal interface ICacheServie
     {
         public void Add(WebsiteData websiteData);
-        public Cache Load(string url);
+        public Cache? Load(string url);
         public void Clear();
     }
 }
