@@ -47,7 +47,6 @@ namespace PasswordManager.Services
             checkValidation(user, password);
             _userRepository.Update(user);
         }
-
         private void checkValidation(User user,string password)
         {
             if (user == null)

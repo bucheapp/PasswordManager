@@ -9,13 +9,9 @@ namespace PasswordManager.Models
     public class User
     {
         public long Id { get; set; }
-        public string Name { get; set; }
-        public bool IsDefault { get; set; }
+        public string Name { get; set; } = "";
         public int Index { get; set; }
-        public User(string name,bool isDefault)
-        {
-            Name = name;
-            IsDefault = isDefault;
-        }
+
+        public User() {}
     }
 }

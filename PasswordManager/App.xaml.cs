@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.DependencyInjection;
 using PasswordManager.Repositories;
 using PasswordManager.Services;
 using System.Configuration;
 using System.Data;
+using System.IO;
 using System.Windows;
 using System.Windows.Media.Media3D;
 
@@ -20,18 +22,25 @@ namespace PasswordManager
 
             var services = new ServiceCollection();
 
+            if (!Directory.Exists("db"))
+            {
+                Directory.CreateDirectory("db");
+            }
+
             // SQL
-            string connectionString = "Data Source=password.db;";
+            string connectionAccountInfoString = "Data Source=db/accountinfo.db;";
+            string connectionCacheString = "Data Source=db/cache.db;";
+            string connectionUserString = "Data Source=db/user.db;";
 
             // Repository
 
-            services.AddSingleton<IAccountInfoRepository>(_ => new AccountInfoRepository(connectionString));
-            services.AddSingleton<ICacheRepository>(_ => new CacheRepository(connectionString));
-            services.AddSingleton<IUserRepository>(_ => new UserRepository(connectionString));
+            services.AddSingleton<IAccountInfoRepository>(_ => new AccountInfoRepository(connectionAccountInfoString));
+            services.AddSingleton<ICacheRepository>(_ => new CacheRepository(connectionCacheString));
+            services.AddSingleton<IUserRepository>(_ => new UserRepository(connectionUserString));
 
             // Service
             services.AddSingleton<IAccountInfoService, AccountInfoService>();
-            services.AddSingleton<IAppSettingsService, AppSettingsService>();
+            services.AddSingleton<ISettingsService, SettingsService>();
             services.AddSingleton<ICacheService, CacheService>();
             services.AddSingleton<IUserService, UserService>();
             //services.AddSingleton<IWebSiteFetchService, WebSiteFetchService>();
@@ -43,7 +52,7 @@ namespace PasswordManager
 
             var mainWindow = Services.GetRequiredService<MainWindow>();
 
-            var settings = new AppSettingsService().Load();
+            var settings = new SettingsService().LoadWindowSettings();
 
             if (settings == null)
             {
