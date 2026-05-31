@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PasswordManager.Models
 {
-    internal class Cache
+    public class Cache
     {
         public long Id { get; set; }
         public string Url { get; set; }

@@ -12,7 +12,7 @@ namespace PasswordManager.Models
         EmailPassword
     }
 
-    internal class AccountInfo
+    public class AccountInfo
     {
         public long Id { get; set; }
         public string? Url { get; set; }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PasswordManager.Repositories
 {
-    internal interface IUserRepository
+    public interface IUserRepository
     {
         IEnumerable<User> GetAll();
         User? GetById(long id);

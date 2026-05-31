@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace PasswordManager.Repositories
 {
-    internal class CacheRepository : ICacheRepository
+    public class CacheRepository : ICacheRepository
     {
         private readonly string _connectionString;
 
@@ -22,14 +22,14 @@ namespace PasswordManager.Repositories
         public IEnumerable<Cache> GetAll()
         {
             using var conn = CreateConnection();
-            return conn.Query<Cache>("SELECT Id, Url FROM Users");
+            return conn.Query<Cache>("SELECT Id, Url, ImageUrl, Title FROM Caches");
         }
         public Cache? GetByUrl(string url)
         {
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<Cache>(
-                "SELECT Id, Url FROM Caches WHERE Url = @Url",
+                "SELECT Id, Url, ImageUrl, Title FROM Caches WHERE Url = @Url",
                 new { Url = url }
             );
         }

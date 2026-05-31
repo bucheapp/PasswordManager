@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PasswordManager.Repositories
 {
-    internal interface IAccountInfoRepository
+    public interface IAccountInfoRepository
     {
         IEnumerable<AccountInfo> GetAll();
         IEnumerable<AccountInfo> GetByUrl(string url);

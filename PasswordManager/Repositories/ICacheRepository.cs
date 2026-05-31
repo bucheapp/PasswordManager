@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PasswordManager.Repositories
 {
-    internal interface ICacheRepository
+    public interface ICacheRepository
     {
         IEnumerable<Cache> GetAll();
         Cache? GetByUrl(string url);

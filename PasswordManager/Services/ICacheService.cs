@@ -8,7 +8,7 @@ using PasswordManager.Models;
 
 namespace PasswordManager.Services
 {
-    internal interface ICacheServie
+    public interface ICacheService
     {
         public void Add(WebsiteData websiteData);
         public Cache? Load(string url);

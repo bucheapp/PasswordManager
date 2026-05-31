@@ -9,7 +9,7 @@ using Microsoft.Data.Sqlite;
 
 namespace PasswordManager.Repositories
 {
-    internal class UserRepository : IUserRepository
+    public class UserRepository : IUserRepository
     {
         private readonly string _connectionString;
 
@@ -23,14 +23,14 @@ namespace PasswordManager.Repositories
         public IEnumerable<User> GetAll()
         {
             using var conn = CreateConnection();
-            return conn.Query<User>("SELECT Id,Name FROM Users");
+            return conn.Query<User>("SELECT Id, Name, IsDefault, [Index] FROM Users");
         }
         public User? GetById(long id)
         {
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<User>(
-                "SELECT Id, Name FROM Users WHERE Id = @Id",
+                "SELECT Id, Name, IsDefault, [Index] FROM Users WHERE Id = @Id",
                 new { Id = id }
             );
         }
@@ -39,7 +39,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<User>(
-                "SELECT Id, Name FROM Users WHERE Name = @Name",
+                "SELECT Id, Name, IsDefault, [Index] FROM Users WHERE Name = @Name",
                 new { Name = name }
             );
         }

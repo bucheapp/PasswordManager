@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace PasswordManager.Repositories
 {
-    internal class AccountInfoRepository : IAccountInfoRepository
+    public class AccountInfoRepository : IAccountInfoRepository
     {
         private readonly string _connectionString;
         public AccountInfoRepository(string connectionString)

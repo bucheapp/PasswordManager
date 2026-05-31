@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 
 namespace PasswordManager.Services
 {
-    internal class UserService : IUserService
+    public class UserService : IUserService
     {
         IUserRepository _userRepository;
 
-        UserService(IUserRepository userRepository)
+        public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
         }
@@ -45,12 +45,6 @@ namespace PasswordManager.Services
         public void Update(User user,string password)
         {
             checkValidation(user, password);
-            
-            if (_userRepository.GetByName(user.Name) != null)
-            {
-                throw new InvalidOperationException("A user with the same name already exists.");
-            }
-
             _userRepository.Update(user);
         }
 
@@ -61,7 +55,7 @@ namespace PasswordManager.Services
                 throw new ArgumentNullException(nameof(user));
             }
 
-            if (user.Name.Length < 3 && user.Name.Length > 10)
+            if (user.Name.Length < 3 || user.Name.Length > 10)
             {
                 throw new ArgumentException("Username must be between 3 and 10 characters long.");
             }
@@ -76,7 +70,7 @@ namespace PasswordManager.Services
                 return;
             }
 
-            if (password.Length < 5 && password.Length > 30)
+            if (password.Length < 5 || password.Length > 30)
             {
                 throw new ArgumentException("Password must be between 5 and 30 characters long.");
             }

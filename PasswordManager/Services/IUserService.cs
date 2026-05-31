@@ -7,7 +7,7 @@ using PasswordManager.Models;
 
 namespace PasswordManager.Services
 {
-    internal interface IUserService
+    public interface IUserService
     {
         void Create(User user, string password);
         void Delete(string name);

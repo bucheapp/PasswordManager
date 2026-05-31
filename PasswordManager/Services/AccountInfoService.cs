@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace PasswordManager.Services
 {
-    internal class AccountInfoService : IAccountInfoService
+    public class AccountInfoService : IAccountInfoService
     {
         IAccountInfoRepository _accountInfoRepository;
         public AccountInfoService(IAccountInfoRepository accountInfoRepository)
@@ -39,12 +39,6 @@ namespace PasswordManager.Services
         public void Update(AccountInfo accountInfo)
         {
             checkValidation(accountInfo);
-
-            if (_accountInfoRepository.GetByName(accountInfo.Name) != null)
-            {
-                throw new InvalidOperationException("A accountInfo with the same name already exists.");
-            }
-
             _accountInfoRepository.Update(accountInfo);
         }
         public List<AccountInfo> GetAll()

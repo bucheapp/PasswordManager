@@ -10,7 +10,7 @@ using System.IO;
 
 namespace PasswordManager.Services
 {
-    internal class CacheService : ICacheServie
+    public class CacheService : ICacheService
     {
         ICacheRepository _cacheRepository;
         private const string FaviconDirectoryPath = "favicon";

@@ -8,7 +8,7 @@ using PasswordManager.Models;
 
 namespace PasswordManager.Services
 {
-    internal interface IAccountInfoService
+    public interface IAccountInfoService
     {
         void Create(AccountInfo accountInfo);
         void Delete(long id);

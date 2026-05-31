@@ -10,7 +10,7 @@ using System.Windows;
 
 namespace PasswordManager.Services
 {
-    internal class AppSettingsService : IAppSettingsService
+    public class AppSettingsService : IAppSettingsService
     {
         private const string AppSettingsFileName = "appsettings.json";
         public void Save(AppSettings appSettings)
@@ -27,6 +27,8 @@ namespace PasswordManager.Services
                 AppSettings appSettings = new AppSettings();
                 appSettings.Width = 800;
                 appSettings.Height = 450;
+                appSettings.Left = null;
+                appSettings.Top = null;
                 appSettings.WindowState = WindowState.Normal;
                 return appSettings;
             }

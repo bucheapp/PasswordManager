@@ -8,7 +8,7 @@ using System.Windows.Media.Imaging;
 
 namespace PasswordManager.Services
 {
-    internal interface IWebSiteFetchService
+    public interface IWebSiteFetchService
     {
         WebsiteData Fetch(string url);
     }
