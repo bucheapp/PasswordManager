@@ -50,24 +50,7 @@ namespace PasswordManager
 
             Services = services.BuildServiceProvider();
 
-            var mainWindow = Services.GetRequiredService<MainWindow>();
-
-            var settings = new SettingsService().LoadWindowSettings();
-
-            if (settings == null)
-            {
-                return;
-            }
-
-            mainWindow.WindowStartupLocation = WindowStartupLocation.Manual;
-
-            mainWindow.Width = settings.Width;
-            mainWindow.Height = settings.Height;
-            mainWindow.Left = settings.Left ?? mainWindow.Left;
-            mainWindow.Top = settings.Top ?? mainWindow.Top;
-            mainWindow.WindowState = settings.WindowState;
-
-            mainWindow.Show();
+            //Services.GetRequiredService<MainWindow>();
 
             base.OnStartup(e);
         }

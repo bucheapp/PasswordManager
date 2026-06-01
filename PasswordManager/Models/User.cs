@@ -10,8 +10,7 @@ namespace PasswordManager.Models
     {
         public long Id { get; set; }
         public string Name { get; set; } = "";
-        public int Index { get; set; }
-
+        public long Index { get; set; }
         public User() {}
     }
 }

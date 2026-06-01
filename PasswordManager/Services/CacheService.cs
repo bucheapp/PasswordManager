@@ -26,18 +26,18 @@ namespace PasswordManager.Services
                 throw new InvalidOperationException("This URL already exists.");
             }
 
-            Uri uri = new Uri(url);
+            Uri uri = new(url);
             string result = uri.GetLeftPart(UriPartial.Authority);
 
             if (result != null)
             {
                 string imageUrl = OutputImage(websiteData.Image);
-                if (imageUrl == null)
+                Cache cache = new()
                 {
-                    throw new InvalidOperationException("Failed to generate image URL.");
-                }
-
-                Cache cache = new Cache(result, imageUrl, websiteData.Titile);
+                    Url = result,
+                    ImageUrl = imageUrl ?? throw new InvalidOperationException("Failed to generate image URL."),
+                    Title = websiteData.Title
+                };
                 _cacheRepository.Create(cache);
             }
         }

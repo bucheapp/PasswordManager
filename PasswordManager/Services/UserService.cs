@@ -21,7 +21,7 @@ namespace PasswordManager.Services
 
         public void Create(User user,string password)
         {
-            checkValidation(user,password);
+            CheckValidation(user,password);
             if(_userRepository.GetByName(user.Name) != null) {
                 throw new InvalidOperationException("A user with the same name already exists.");
             }
@@ -37,21 +37,25 @@ namespace PasswordManager.Services
         {
             return _userRepository.GetByName(name);
         }
+        public User? Get(long id)
+        {
+            return _userRepository.GetById(id);
+        }
         public List<User> GetAll()
         {
             IEnumerable<User> users = _userRepository.GetAll();
-            return users.ToList();
+            return [.. users];
         }
         public void Update(User user,string password)
         {
-            checkValidation(user, password);
+            CheckValidation(user, password);
             _userRepository.Update(user);
         }
-        private void checkValidation(User user,string password)
+        private void CheckValidation(User user,string password)
         {
             if (user == null)
             {
-                throw new ArgumentNullException(nameof(user));
+                ArgumentNullException.ThrowIfNull(user, nameof(user));
             }
 
             if (user.Name.Length < 3 || user.Name.Length > 10)

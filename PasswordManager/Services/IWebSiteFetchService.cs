@@ -17,13 +17,13 @@ namespace PasswordManager.Services
     {
         public string Url { get; set; }
         public BitmapImage Image { get; set; }
-        public string Titile { get; set; }
+        public string Title { get; set; }
 
         public WebsiteData(string url,BitmapImage image,string title)
         {
             Url = url;
             Image = image;
-            Titile = title;
+            Title = title;
         }
     }
 }

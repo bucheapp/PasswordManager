@@ -19,7 +19,7 @@ namespace PasswordManager.Services
 
         public void Create(AccountInfo accountInfo)
         {
-            checkValidation(accountInfo);
+            CheckValidation(accountInfo);
 
             if(_accountInfoRepository.GetByName(accountInfo.Name) != null)
             {
@@ -38,24 +38,24 @@ namespace PasswordManager.Services
         }
         public void Update(AccountInfo accountInfo)
         {
-            checkValidation(accountInfo);
+            CheckValidation(accountInfo);
             _accountInfoRepository.Update(accountInfo);
         }
         public List<AccountInfo> GetAll()
         {
             IEnumerable<AccountInfo> accountInfos = _accountInfoRepository.GetAll();
-            return accountInfos.ToList();
+            return [.. accountInfos];
         }
         public AccountInfo? Get(long id)
         {
             return _accountInfoRepository.GetById(id);
         }
 
-        private void checkValidation(AccountInfo accountInfo)
+        private void CheckValidation(AccountInfo accountInfo)
         {
             if (accountInfo == null)
             {
-                throw new ArgumentNullException(nameof(accountInfo));
+                ArgumentNullException.ThrowIfNull(accountInfo, nameof(accountInfo));
             }
 
             if(accountInfo.AuthType == AuthType.UsernamePassword
