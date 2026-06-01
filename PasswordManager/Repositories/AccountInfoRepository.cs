@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using PasswordManager.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Policy;
 using System.Text;

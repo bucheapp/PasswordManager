@@ -1,21 +1,23 @@
-﻿using PasswordManager.Services;
+﻿using Microsoft.Data.Sqlite;
+using PasswordManager.Models;
+using PasswordManager.Repositories;
+using PasswordManager.Services;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
+using System.Printing;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Markup.Localizer;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using static System.Net.Mime.MediaTypeNames;
-using PasswordManager.Models;
-using System.Windows.Markup.Localizer;
-using System.Printing;
-using PasswordManager.Repositories;
 
 namespace PasswordManager
 {
@@ -66,37 +68,65 @@ namespace PasswordManager
         private void Init()
         {
             List<User> users = _userService.GetAll();
-            string password = "";
+            string? password = null;
 
             if (users.Count == 0)
             {
-                var window = ShowCreateNameWindow(null,null);
-                if(window != null)
+                var createUserWindow = ShowCreateUserWindow(null,null);
+                if(createUserWindow != null)
                 {
-                    password = window.Password;
+                    password = createUserWindow.Password;
                 }
             } else
             {
-                var window = ShowSelectUserWindow(users);
-                if (window != null)
+                var selectUserWindow = ShowSelectUserWindow(users);
+                if (selectUserWindow != null)
                 {
-                    _currentUser = window.SelectedUser;
-                    password = window.Password;
+                    if (selectUserWindow.Result == SelectUserWindowResult.CreateUser)
+                    {
+                        var createUserWindow = ShowCreateUserWindow(null, null);
+
+                        if (createUserWindow != null)
+                        {
+                            password = createUserWindow.Password;
+                        }
+                    }
+                    else if (selectUserWindow.Result == SelectUserWindowResult.SelectUser)
+                    {
+                        _currentUser = selectUserWindow.SelectedUser;
+                        password = selectUserWindow.Password;
+                    }
                 }
             }
 
-            Console.WriteLine("AAAAAAAAAAAAAAAAAAAAAA");
             Title = $"Password Manager - {_currentUser?.Name}";
-            _accountInfoService.SetDB(_currentUser?.Id ?? users[0].Id,password);
+            
+            if(password != null)
+            {
+                try
+                {
+                    _accountInfoService.SetDB(_currentUser?.Id ?? users[0].Id, password);
+                }
+                catch (SqliteException e)
+                {
+                    MessageBox.Show(
+                        e.Message,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
 
-            MainFrame.Navigate(new PasswordPage());
+                    Init();
+
+                    return;
+                }
+
+                MainFrame.Navigate(new PasswordPage());
+            }
         }
 
         private SelectUserWindow? ShowSelectUserWindow(List<User> users)
         {
             AppSettings appSettings = _settingsService.LoadAppSettings();
-
-            Console.WriteLine($"Default User ID: {appSettings.DefaultUserId}");
 
             User? defaultUser = _userService.Get(appSettings.DefaultUserId);
             if(defaultUser == null)
@@ -124,7 +154,7 @@ namespace PasswordManager
             }
         }
 
-        private CreateUserWindow? ShowCreateNameWindow(string? prevName,string? prevPassword)
+        private CreateUserWindow? ShowCreateUserWindow(string? prevName,string? prevPassword)
         {
             var window = new CreateUserWindow();
 
@@ -171,7 +201,7 @@ namespace PasswordManager
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
 
-                    return ShowCreateNameWindow(name,password);
+                    return ShowCreateUserWindow(name,password);
                 }
             } else
             {

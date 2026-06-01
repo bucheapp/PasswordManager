@@ -21,9 +21,9 @@ namespace PasswordManager
     public partial class SelectUserWindow : Window
     {
         private readonly List<User> _users;
-        public readonly string Password = "";
+        public string Password => PasswordBox.Password;
         public User SelectedUser { get; set; }
-
+        public SelectUserWindowResult Result { get; set; }
         public SelectUserWindow(List<User> users,User defaultUser)
         {
             InitializeComponent();
@@ -47,6 +47,13 @@ namespace PasswordManager
             }
         }
 
+        private void CreateUser_Click(object sender, RoutedEventArgs e)
+        {
+            Result = SelectUserWindowResult.CreateUser;
+            DialogResult = true;
+            Close();
+        }
+
         private void Ok_Click(object sender, RoutedEventArgs e)
         {
             var user = UserComboBox.SelectedItem as User;
@@ -64,8 +71,15 @@ namespace PasswordManager
             }
 
             SelectedUser = user;
+            Result = SelectUserWindowResult.SelectUser;
             DialogResult = true;
             Close();
         }
+    }
+
+    public enum SelectUserWindowResult
+    {
+        CreateUser,
+        SelectUser
     }
 }
