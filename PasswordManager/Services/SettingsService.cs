@@ -12,8 +12,8 @@ namespace PasswordManager.Services
 {
     public class SettingsService : ISettingsService
     {
-        private const string WindowSettingsFileName = "windowsettings.json";
-        private const string AppSettingsFileName = "appsettings.json";
+        private const string WindowSettingsFileName = "settings/window.json";
+        private const string AppSettingsFileName = "settings/app.json";
         public void SaveWindowSettings(WindowSettings windowSettings)
         {
             string json = JsonSerializer.Serialize(windowSettings);
@@ -39,7 +39,7 @@ namespace PasswordManager.Services
             if (File.Exists(WindowSettingsFileName))
             {
                 string json = File.ReadAllText(WindowSettingsFileName);
-                WindowSettings windowSettings = JsonSerializer.Deserialize<WindowSettings>(json);
+                WindowSettings? windowSettings = JsonSerializer.Deserialize<WindowSettings>(json);
                 if(windowSettings == null)
                 {
                     return defaultWindowSettings;
@@ -55,7 +55,7 @@ namespace PasswordManager.Services
         {
             AppSettings defaultAppSettings = new AppSettings()
             {
-                DefaultUserId = 0
+                DefaultUserId = 1
             };
 
             if (File.Exists(AppSettingsFileName))

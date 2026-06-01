@@ -11,56 +11,82 @@ namespace PasswordManager.Services
 {
     public class AccountInfoService : IAccountInfoService
     {
-        IAccountInfoRepository _accountInfoRepository;
-        public AccountInfoService(IAccountInfoRepository accountInfoRepository)
+        private readonly IAccountInfoRepositoryFactory _factory;
+        private readonly Dictionary<long, IAccountInfoRepository> _cache = new();
+
+        public long UserId { get; set; }
+        public string MasterKey { get; set; }
+        public AccountInfoService(IAccountInfoRepositoryFactory factory)
         {
-            _accountInfoRepository = accountInfoRepository;
+            _factory = factory;
+        }
+
+        private IAccountInfoRepository Repo
+        {
+            get
+            {
+                if (!_cache.TryGetValue(UserId, out var repo))
+                {
+                    repo = _factory.Create(UserId,MasterKey);
+                    _cache[UserId] = repo;
+                }
+                return repo;
+            }
+        }
+
+        public void SetDB(long userId, string masterKey)
+        {
+            UserId = userId;
+            MasterKey = masterKey;
+            var repo = _factory.Create(UserId, MasterKey);
+            _cache[UserId] = repo;
         }
 
         public void Create(AccountInfo accountInfo)
         {
             CheckValidation(accountInfo);
 
-            if(_accountInfoRepository.GetByName(accountInfo.Name) != null)
+            if (Repo.GetByName(accountInfo.Name) != null)
             {
-                throw new InvalidOperationException("A accountInfo with the same name already exists.");
+                throw new InvalidOperationException(
+                    "An accountInfo with the same name already exists.");
             }
 
-            _accountInfoRepository.Create(accountInfo);
+            Repo.Create(accountInfo);
         }
+
         public void Delete(long id)
         {
-            _accountInfoRepository.DeleteById(id);
+            Repo.DeleteById(id);
         }
+
         public void Delete(string url)
         {
-            _accountInfoRepository.DeleteByUrl(url);
+            Repo.DeleteByUrl(url);
         }
+
         public void Update(AccountInfo accountInfo)
         {
             CheckValidation(accountInfo);
-            _accountInfoRepository.Update(accountInfo);
+            Repo.Update(accountInfo);
         }
+
         public List<AccountInfo> GetAll()
         {
-            IEnumerable<AccountInfo> accountInfos = _accountInfoRepository.GetAll();
-            return [.. accountInfos];
+            return Repo.GetAll().ToList();
         }
+
         public AccountInfo? Get(long id)
         {
-            return _accountInfoRepository.GetById(id);
+            return Repo.GetById(id);
         }
 
         private void CheckValidation(AccountInfo accountInfo)
         {
-            if (accountInfo == null)
-            {
-                ArgumentNullException.ThrowIfNull(accountInfo, nameof(accountInfo));
-            }
+            ArgumentNullException.ThrowIfNull(accountInfo);
 
-            if(accountInfo.AuthType == AuthType.UsernamePassword
-                ||
-                accountInfo.AuthType == AuthType.EmailPassword)
+            if (accountInfo.AuthType is AuthType.UsernamePassword
+                or AuthType.EmailPassword)
             {
                 if (string.IsNullOrWhiteSpace(accountInfo.Name))
                 {

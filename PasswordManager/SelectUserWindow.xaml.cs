@@ -33,15 +33,18 @@ namespace PasswordManager
             SelectedUser = defaultUser;
 
             if (_users.Count > 0)
-                UserComboBox.SelectedIndex = 0;
-
-            _users.ForEach(u =>
             {
-                if (u.Id == defaultUser.Id)
+                UserComboBox.SelectedIndex = 0;
+            } else
+            {
+                _users.ForEach(u =>
                 {
-                    UserComboBox.SelectedItem = u;
-                }
-            });
+                    if (u.Id == defaultUser.Id)
+                    {
+                        UserComboBox.SelectedItem = u;
+                    }
+                });
+            }
         }
 
         private void Ok_Click(object sender, RoutedEventArgs e)

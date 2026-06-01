@@ -27,14 +27,18 @@ namespace PasswordManager
                 Directory.CreateDirectory("db");
             }
 
+            if (!Directory.Exists("settings"))
+            {
+                Directory.CreateDirectory("settings");
+            }
+
             // SQL
-            string connectionAccountInfoString = "Data Source=db/accountinfo.db;";
             string connectionCacheString = "Data Source=db/cache.db;";
             string connectionUserString = "Data Source=db/user.db;";
 
             // Repository
 
-            services.AddSingleton<IAccountInfoRepository>(_ => new AccountInfoRepository(connectionAccountInfoString));
+            services.AddSingleton<IAccountInfoRepositoryFactory>(_ => new AccountInfoRepositoryFactory());
             services.AddSingleton<ICacheRepository>(_ => new CacheRepository(connectionCacheString));
             services.AddSingleton<IUserRepository>(_ => new UserRepository(connectionUserString));
 
@@ -50,7 +54,7 @@ namespace PasswordManager
 
             Services = services.BuildServiceProvider();
 
-            //Services.GetRequiredService<MainWindow>();
+            var mainWindow = Services.GetRequiredService<MainWindow>();
 
             base.OnStartup(e);
         }

@@ -15,6 +15,7 @@ using static System.Net.Mime.MediaTypeNames;
 using PasswordManager.Models;
 using System.Windows.Markup.Localizer;
 using System.Printing;
+using PasswordManager.Repositories;
 
 namespace PasswordManager
 {
@@ -28,7 +29,7 @@ namespace PasswordManager
         private readonly ICacheService _cacheService;
         private readonly IUserService _userService;
         //private readonly IWebSiteFetchService _webSiteFetchService;
-        private User _currentUser;
+        private User? _currentUser;
 
         public MainWindow(
             IAccountInfoService accountInfoService,
@@ -69,17 +70,24 @@ namespace PasswordManager
 
             if (users.Count == 0)
             {
-                ShowCreateNameWindow(null,null);
+                var window = ShowCreateNameWindow(null,null);
+                if(window != null)
+                {
+                    password = window.Password;
+                }
             } else
             {
                 var window = ShowSelectUserWindow(users);
                 if (window != null)
                 {
                     _currentUser = window.SelectedUser;
+                    password = window.Password;
                 }
             }
 
-            Title = $"Password Manager - {_currentUser.Name}";
+            Console.WriteLine("AAAAAAAAAAAAAAAAAAAAAA");
+            Title = $"Password Manager - {_currentUser?.Name}";
+            _accountInfoService.SetDB(_currentUser?.Id ?? users[0].Id,password);
 
             MainFrame.Navigate(new PasswordPage());
         }
@@ -88,7 +96,21 @@ namespace PasswordManager
         {
             AppSettings appSettings = _settingsService.LoadAppSettings();
 
-            User defaultUser = _userService.Get(appSettings.DefaultUserId);
+            Console.WriteLine($"Default User ID: {appSettings.DefaultUserId}");
+
+            User? defaultUser = _userService.Get(appSettings.DefaultUserId);
+            if(defaultUser == null)
+            {
+                AppSettings newAppSettings = new()
+                {
+                    DefaultUserId = users[0].Id
+                };
+
+                _settingsService.SaveAppSettings(newAppSettings);
+
+                return ShowSelectUserWindow(users);
+            }
+
             var window = new SelectUserWindow(users, defaultUser);
 
             if (window.ShowDialog() == true)
@@ -102,7 +124,7 @@ namespace PasswordManager
             }
         }
 
-        private void ShowCreateNameWindow(string? prevName,string? prevPassword)
+        private CreateUserWindow? ShowCreateNameWindow(string? prevName,string? prevPassword)
         {
             var window = new CreateUserWindow();
 
@@ -119,13 +141,14 @@ namespace PasswordManager
 
                 User user = new()
                 {
+                    Id = 1,
                     Name = name,
-                    Index = 0
+                    DisplayIndex = 0
                 };
 
                 AppSettings appSettings = new()
                 {
-                    DefaultUserId = 0
+                    DefaultUserId = 1
                 };
                 _settingsService.SaveAppSettings(appSettings);
 
@@ -136,6 +159,9 @@ namespace PasswordManager
                         throw new ArgumentException("Passwords do not match.");
                     }
                     _userService.Create(user, password);
+                    _currentUser = user;
+
+                    return window;
                 }
                 catch (ArgumentException e)
                 {
@@ -145,11 +171,12 @@ namespace PasswordManager
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
 
-                    ShowCreateNameWindow(name,password);
+                    return ShowCreateNameWindow(name,password);
                 }
             } else
             {
                 System.Windows.Application.Current.Shutdown();
+                return null;
             }
         }
         private void MainWindow_Closing(object? sender, CancelEventArgs e)

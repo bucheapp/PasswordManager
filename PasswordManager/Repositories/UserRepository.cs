@@ -25,7 +25,7 @@ namespace PasswordManager.Repositories
                 CREATE TABLE IF NOT EXISTS Users (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Name TEXT NOT NULL,
-                    [Index] INTEGER NOT NULL DEFAULT 0
+                    DisplayIndex INTEGER NOT NULL DEFAULT 0
                 );";
 
             using var cmd = new SqliteCommand(sql, conn);
@@ -37,14 +37,14 @@ namespace PasswordManager.Repositories
         public IEnumerable<User> GetAll()
         {
             using var conn = CreateConnection();
-            return conn.Query<User>("SELECT Id, Name, [Index] FROM Users");
+            return conn.Query<User>("SELECT Id, Name, DisplayIndex FROM Users");
         }
         public User? GetById(long id)
         {
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<User>(
-                "SELECT Id, Name, [Index] FROM Users WHERE Id = @Id",
+                "SELECT Id, Name, DisplayIndex FROM Users WHERE Id = @Id",
                 new { Id = id }
             );
         }
@@ -53,7 +53,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<User>(
-                "SELECT Id, Name, [Index] FROM Users WHERE Name = @Name",
+                "SELECT Id, Name, DisplayIndex FROM Users WHERE Name = @Name",
                 new { Name = name }
             );
         }
@@ -62,7 +62,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             conn.Execute(
-                @"INSERT INTO Users (Name, [Index]) VALUES (@Name, @Index)",
+                @"INSERT INTO Users (Name, DisplayIndex) VALUES (@Name, @DisplayIndex)",
                 user
             );
         }
@@ -90,7 +90,7 @@ namespace PasswordManager.Repositories
 
             conn.Execute(
                 @"UPDATE Users
-                SET Name = @Name, [Index] = @Index WHERE Id = @Id",
+                SET Name = @Name, DisplayIndex = @DisplayIndex WHERE Id = @Id",
                 user
             );
         }
