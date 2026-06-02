@@ -25,12 +25,12 @@ namespace PasswordManager.Repositories
             string sql = @"
                 CREATE TABLE IF NOT EXISTS AccountInfos (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Url TEXT NOT NULL,
                     Name TEXT NOT NULL,
                     Title TEXT NOT NULL,
                     Password TEXT NOT NULL,
                     AuthType TEXT NOT NULL,
-                    DisplayIndex INTEGER NOT NULL DEFAULT 0
+                    DisplayIndex INTEGER NOT NULL DEFAULT 0,
+                    ServiceInfoId INTEGER NOT NULL
                 );";
 
             using var cmd = new SqliteCommand(sql, conn);
@@ -50,23 +50,14 @@ namespace PasswordManager.Repositories
         public IEnumerable<AccountInfo> GetAll()
         {
             using var conn = CreateConnection();
-            return conn.Query<AccountInfo>("SELECT Id, Url, Name, Title, Password, AuthType, DisplayIndex FROM AccountInfos");
-        }
-        public IEnumerable<AccountInfo> GetByUrl(string url)
-        {
-            using var conn = CreateConnection();
-
-            return conn.Query<AccountInfo>(
-                "SELECT Id, Url, Name, Title, Password, AuthType, DisplayIndex FROM AccountInfos WHERE Url = @Url",
-                new { Url = url }
-            );
+            return conn.Query<AccountInfo>("SELECT Id, Name, Title, Password, AuthType, DisplayIndex, ServiceInfoId FROM AccountInfos");
         }
         public AccountInfo? GetById(long id)
         {
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<AccountInfo > (
-                "SELECT Id, Url, Name, Title, Password, AuthType, DisplayIndex FROM AccountInfos WHERE Id = @Id",
+                "SELECT Id, Name, Title, Password, AuthType, DisplayIndex, ServiceInfoId FROM AccountInfos WHERE Id = @Id",
                 new { Id = id }
             );
         }
@@ -75,8 +66,16 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<AccountInfo>(
-                "SELECT Id, Url, Name, Title, Password, AuthType, DisplayIndex FROM AccountInfos WHERE Name = @Name",
+                "SELECT Id, Name, Title, Password, AuthType, DisplayIndex, ServiceInfoId FROM AccountInfos WHERE Name = @Name",
                 new { Name = name }
+            );
+        }
+        public IEnumerable<AccountInfo> GetByServiceInfoId(long serviceInfoId)
+        {
+            using var conn = CreateConnection();
+            return conn.Query<AccountInfo>(
+                "SELECT Id, Name, Title, Password, AuthType, DisplayIndex, ServiceInfoId FROM AccountInfos WHERE ServiceInfoId = @ServiceInfoId",
+                new { ServiceInfoId = serviceInfoId }
             );
         }
         public void Create(AccountInfo accountInfo)
@@ -84,7 +83,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             conn.Execute(
-                @"INSERT INTO AccountInfos (Url, Name, Title, Password, AuthType, DisplayIndex) VALUES (@Url, @Name, @Title, @Password, @AuthType, @DisplayIndex)",
+                @"INSERT INTO AccountInfos (Name, Title, Password, AuthType, DisplayIndex, ServiceInfoId) VALUES (@Name, @Title, @Password, @AuthType, @DisplayIndex, @ServiceInfoId)",
                 accountInfo
             );
         }
@@ -97,25 +96,15 @@ namespace PasswordManager.Repositories
                 new { Id = id }
             );
         }
-        public void DeleteByUrl(string url)
-        {
-            using var conn = CreateConnection();
-
-            conn.Execute(
-                "DELETE FROM AccountInfos WHERE Url = @Url",
-                new { Url = url }
-            );
-        }
         public void Update(AccountInfo accountInfo)
         {
             using var conn = CreateConnection();
 
             conn.Execute(
                 @"UPDATE AccountInfos
-                SET Url = @Url,Name = @Name,Title = @Title,Password = @Password,AuthType = @AuthType,DisplayIndex = @DisplayIndex WHERE Id = @Id",
+                SET Name = @Name, Title = @Title, Password = @Password, AuthType = @AuthType, DisplayIndex = @DisplayIndex, ServiceInfoId = @ServiceInfoId WHERE Id = @Id",
                 accountInfo
             );
         }
-
     }
 }

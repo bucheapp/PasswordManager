@@ -44,6 +44,7 @@ namespace PasswordManager
 
             // Service
             services.AddSingleton<IAccountInfoService, AccountInfoService>();
+            services.AddSingleton<IServiceInfoService, ServiceInfoService>();
             services.AddSingleton<ISettingsService, SettingsService>();
             services.AddSingleton<ICacheService, CacheService>();
             services.AddSingleton<IUserService, UserService>();

@@ -22,9 +22,13 @@ namespace PasswordManager.Services
         public void Create(User user,string password)
         {
             CheckValidation(user,password);
+
             if(_userRepository.GetByName(user.Name) != null) {
                 throw new InvalidOperationException("A user with the same name already exists.");
             }
+
+            long MaxDisplayIndex = _userRepository.GetAll().Max(u => u.DisplayIndex);
+            user.DisplayIndex = MaxDisplayIndex + 1;
 
             _userRepository.Create(user);
         }
@@ -49,6 +53,13 @@ namespace PasswordManager.Services
         public void Update(User user,string password)
         {
             CheckValidation(user, password);
+
+            User? getUser = _userRepository.GetByName(user.Name);
+            if (getUser != null && getUser.Id != user.Id)
+            {
+                throw new InvalidOperationException("A user with the same name already exists.");
+            }
+
             _userRepository.Update(user);
         }
         private void CheckValidation(User user,string password)

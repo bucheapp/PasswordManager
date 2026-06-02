@@ -12,10 +12,10 @@ namespace PasswordManager.Services
     public class AccountInfoService : IAccountInfoService
     {
         private readonly IAccountInfoRepositoryFactory _factory;
-        private readonly Dictionary<long, IAccountInfoRepository> _cache = new();
+        private readonly Dictionary<long, IAccountInfoRepository> _cache = [];
 
         public long UserId { get; set; }
-        public string MasterKey { get; set; }
+        public string MasterKey { get; set; } = "";
         public AccountInfoService(IAccountInfoRepositoryFactory factory)
         {
             _factory = factory;
@@ -52,6 +52,8 @@ namespace PasswordManager.Services
                     "An accountInfo with the same name already exists.");
             }
 
+            long MaxDisplayIndex = Repo.GetAll().Max(u => u.DisplayIndex);
+            accountInfo.DisplayIndex = MaxDisplayIndex + 1;
             Repo.Create(accountInfo);
         }
 
@@ -59,21 +61,23 @@ namespace PasswordManager.Services
         {
             Repo.DeleteById(id);
         }
-
-        public void Delete(string url)
-        {
-            Repo.DeleteByUrl(url);
-        }
-
         public void Update(AccountInfo accountInfo)
         {
             CheckValidation(accountInfo);
+            
+            var getAccountInfo = Repo.GetByName(accountInfo.Name);
+
+            if (getAccountInfo != null && getAccountInfo.Id != accountInfo.Id)
+            {
+                throw new InvalidOperationException("An account with the same name already exists.");
+            }
+
             Repo.Update(accountInfo);
         }
 
         public List<AccountInfo> GetAll()
         {
-            return Repo.GetAll().ToList();
+            return [.. Repo.GetAll()];
         }
 
         public AccountInfo? Get(long id)

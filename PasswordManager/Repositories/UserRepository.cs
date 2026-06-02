@@ -32,7 +32,7 @@ namespace PasswordManager.Repositories
             cmd.ExecuteNonQuery();
         }
 
-        private SqliteConnection CreateConnection() => new SqliteConnection(_connectionString);
+        private SqliteConnection CreateConnection() => new(_connectionString);
 
         public IEnumerable<User> GetAll()
         {
