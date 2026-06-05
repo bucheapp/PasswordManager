@@ -12,6 +12,7 @@ namespace PasswordManager.Repositories
         IEnumerable<AccountInfo> GetAll();
         AccountInfo? GetById(long id);
         AccountInfo? GetByName(string name);
+        AccountInfo? GetByNameAndServiceInfoId(string name, long serviceInfoId);
         IEnumerable<AccountInfo> GetByServiceInfoId(long serviceInfoId);
         void Create(AccountInfo accountInfo);
         void DeleteById(long id);

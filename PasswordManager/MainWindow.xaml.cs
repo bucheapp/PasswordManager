@@ -27,25 +27,32 @@ namespace PasswordManager
     public partial class MainWindow : Window
     {
         private readonly IAccountInfoService _accountInfoService;
+        private readonly IServiceInfoService _serviceInfoService;
         private readonly ISettingsService _settingsService;
         private readonly ICacheService _cacheService;
         private readonly IUserService _userService;
+        private readonly PasswordPage _passwordPage;
         //private readonly IWebSiteFetchService _webSiteFetchService;
         private User? _currentUser;
 
         public MainWindow(
             IAccountInfoService accountInfoService,
+            IServiceInfoService serviceInfoService,
             ISettingsService settingsService,
             ICacheService cacheService,
             IUserService userService
+,
+            PasswordPage passwordPage
             //IWebSiteFetchService webSiteFetchService
             )
         {
             InitializeComponent();
             _accountInfoService = accountInfoService;
+            _serviceInfoService = serviceInfoService;
             _settingsService = settingsService;
             _cacheService = cacheService;
             _userService = userService;
+            _passwordPage = passwordPage;
             //_webSiteFetchService = webSiteFetchService;
 
             var windowSettings = _settingsService.LoadWindowSettings();
@@ -72,30 +79,26 @@ namespace PasswordManager
 
             if (users.Count == 0)
             {
-                var createUserWindow = ShowCreateUserWindow(null,null);
+                var createUserWindow = ShowCreateUserWindow("","");
                 if(createUserWindow != null)
                 {
                     password = createUserWindow.Password;
+                } else
+                {
+                    System.Windows.Application.Current.Shutdown();
+                    return;
                 }
             } else
             {
                 var selectUserWindow = ShowSelectUserWindow(users);
                 if (selectUserWindow != null)
                 {
-                    if (selectUserWindow.Result == SelectUserWindowResult.CreateUser)
-                    {
-                        var createUserWindow = ShowCreateUserWindow(null, null);
-
-                        if (createUserWindow != null)
-                        {
-                            password = createUserWindow.Password;
-                        }
-                    }
-                    else if (selectUserWindow.Result == SelectUserWindowResult.SelectUser)
-                    {
-                        _currentUser = selectUserWindow.SelectedUser;
-                        password = selectUserWindow.Password;
-                    }
+                    _currentUser = selectUserWindow.SelectedUser;
+                    password = selectUserWindow.Password;
+                } else
+                {
+                    System.Windows.Application.Current.Shutdown();
+                    return;
                 }
             }
 
@@ -106,6 +109,7 @@ namespace PasswordManager
                 try
                 {
                     _accountInfoService.SetDB(_currentUser?.Id ?? users[0].Id, password);
+                    _serviceInfoService.SetDB(_currentUser?.Id ?? users[0].Id, password);
                 }
                 catch (SqliteException e)
                 {
@@ -120,7 +124,9 @@ namespace PasswordManager
                     return;
                 }
 
-                MainFrame.Navigate(new PasswordPage());
+                List<ServiceInfo> serviceInfos = _serviceInfoService.GetAll();
+                _passwordPage.Init();
+                MainFrame.Navigate(_passwordPage);
             }
         }
 
@@ -145,23 +151,22 @@ namespace PasswordManager
 
             if (window.ShowDialog() == true)
             {
+                if (string.IsNullOrEmpty(window.Password))
+                {
+                    MessageBox.Show("Please enter your password.");
+                    return ShowSelectUserWindow(users);
+                }
                 return window;
             }
             else
             {
-                System.Windows.Application.Current.Shutdown();
                 return null;
             }
         }
 
-        private CreateUserWindow? ShowCreateUserWindow(string? prevName,string? prevPassword)
+        private CreateUserWindow? ShowCreateUserWindow(string prevName,string prevPassword)
         {
-            var window = new CreateUserWindow();
-
-            if (prevName != null && prevPassword != null)
-            {
-                window.SetPreviousData(prevName, prevPassword);
-            }
+            var window = new CreateUserWindow(prevName,prevPassword);
 
             if (window.ShowDialog() == true)
             {
@@ -205,7 +210,6 @@ namespace PasswordManager
                 }
             } else
             {
-                System.Windows.Application.Current.Shutdown();
                 return null;
             }
         }

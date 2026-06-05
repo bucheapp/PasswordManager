@@ -26,7 +26,6 @@ namespace PasswordManager.Repositories
                 CREATE TABLE IF NOT EXISTS AccountInfos (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Name TEXT NOT NULL,
-                    Title TEXT NOT NULL,
                     Password TEXT NOT NULL,
                     AuthType TEXT NOT NULL,
                     DisplayIndex INTEGER NOT NULL DEFAULT 0,
@@ -50,14 +49,14 @@ namespace PasswordManager.Repositories
         public IEnumerable<AccountInfo> GetAll()
         {
             using var conn = CreateConnection();
-            return conn.Query<AccountInfo>("SELECT Id, Name, Title, Password, AuthType, DisplayIndex, ServiceInfoId FROM AccountInfos");
+            return conn.Query<AccountInfo>("SELECT * FROM AccountInfos");
         }
         public AccountInfo? GetById(long id)
         {
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<AccountInfo > (
-                "SELECT Id, Name, Title, Password, AuthType, DisplayIndex, ServiceInfoId FROM AccountInfos WHERE Id = @Id",
+                "SELECT * FROM AccountInfos WHERE Id = @Id",
                 new { Id = id }
             );
         }
@@ -66,15 +65,28 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<AccountInfo>(
-                "SELECT Id, Name, Title, Password, AuthType, DisplayIndex, ServiceInfoId FROM AccountInfos WHERE Name = @Name",
+                "SELECT * FROM AccountInfos WHERE Name = @Name",
                 new { Name = name }
             );
+        }
+        public AccountInfo? GetByNameAndServiceInfoId(string name, long serviceInfoId)
+        {
+            using var conn = CreateConnection();
+
+            return conn.QueryFirstOrDefault<AccountInfo>(
+                @"SELECT * FROM AccountInfos WHERE Name = @Name
+                AND ServiceInfoId = @ServiceInfoId",
+                new
+                {
+                    Name = name,
+                    ServiceInfoId = serviceInfoId
+                });
         }
         public IEnumerable<AccountInfo> GetByServiceInfoId(long serviceInfoId)
         {
             using var conn = CreateConnection();
             return conn.Query<AccountInfo>(
-                "SELECT Id, Name, Title, Password, AuthType, DisplayIndex, ServiceInfoId FROM AccountInfos WHERE ServiceInfoId = @ServiceInfoId",
+                "SELECT * FROM AccountInfos WHERE ServiceInfoId = @ServiceInfoId",
                 new { ServiceInfoId = serviceInfoId }
             );
         }
@@ -83,7 +95,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             conn.Execute(
-                @"INSERT INTO AccountInfos (Name, Title, Password, AuthType, DisplayIndex, ServiceInfoId) VALUES (@Name, @Title, @Password, @AuthType, @DisplayIndex, @ServiceInfoId)",
+                @"INSERT INTO AccountInfos (Name, Password, AuthType, DisplayIndex, ServiceInfoId) VALUES (@Name, @Password, @AuthType, @DisplayIndex, @ServiceInfoId)",
                 accountInfo
             );
         }
@@ -102,7 +114,7 @@ namespace PasswordManager.Repositories
 
             conn.Execute(
                 @"UPDATE AccountInfos
-                SET Name = @Name, Title = @Title, Password = @Password, AuthType = @AuthType, DisplayIndex = @DisplayIndex, ServiceInfoId = @ServiceInfoId WHERE Id = @Id",
+                SET Name = @Name, Password = @Password, AuthType = @AuthType, DisplayIndex = @DisplayIndex, ServiceInfoId = @ServiceInfoId WHERE Id = @Id",
                 accountInfo
             );
         }

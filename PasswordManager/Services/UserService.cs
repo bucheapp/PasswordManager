@@ -27,8 +27,12 @@ namespace PasswordManager.Services
                 throw new InvalidOperationException("A user with the same name already exists.");
             }
 
-            long MaxDisplayIndex = _userRepository.GetAll().Max(u => u.DisplayIndex);
-            user.DisplayIndex = MaxDisplayIndex + 1;
+            long maxDisplayIndex = _userRepository
+                .GetAll()
+                .Select(u => u.DisplayIndex)
+                .DefaultIfEmpty(0)
+                .Max();
+            user.DisplayIndex = maxDisplayIndex + 1;
 
             _userRepository.Create(user);
         }

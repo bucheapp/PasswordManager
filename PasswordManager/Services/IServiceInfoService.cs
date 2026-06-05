@@ -15,5 +15,6 @@ namespace PasswordManager.Services
         void Update(ServiceInfo serviceInfo);
         List<ServiceInfo> GetAll();
         ServiceInfo? Get(long id);
+        ServiceInfo? Get(string title);
     }
 }

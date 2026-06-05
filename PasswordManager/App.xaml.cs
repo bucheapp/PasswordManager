@@ -39,6 +39,7 @@ namespace PasswordManager
             // Repository
 
             services.AddSingleton<IAccountInfoRepositoryFactory>(_ => new AccountInfoRepositoryFactory());
+            services.AddSingleton<IServiceInfoRepositoryFactory>(_ => new ServiceInfoRepositoryFactory());
             services.AddSingleton<ICacheRepository>(_ => new CacheRepository(connectionCacheString));
             services.AddSingleton<IUserRepository>(_ => new UserRepository(connectionUserString));
 
@@ -52,6 +53,7 @@ namespace PasswordManager
 
             // Window
             services.AddTransient<MainWindow>();
+            services.AddTransient<PasswordPage>();
 
             Services = services.BuildServiceProvider();
 

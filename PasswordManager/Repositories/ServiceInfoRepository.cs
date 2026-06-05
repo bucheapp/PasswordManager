@@ -24,7 +24,7 @@ namespace PasswordManager.Repositories
                 CREATE TABLE IF NOT EXISTS ServiceInfos (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Title TEXT NOT NULL,
-                    Url TEXT
+                    Url TEXT,
                     DisplayIndex INTEGER NOT NULL DEFAULT 0
                 );";
 
@@ -47,12 +47,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             return conn.Query<ServiceInfo>(
-                @"SELECT
-                Id,
-                Title,
-                Url,
-                DisplayIndex
-                FROM ServiceInfos
+                @"SELECT * FROM ServiceInfos
                 ORDER BY DisplayIndex");
         }
 
@@ -60,12 +55,7 @@ namespace PasswordManager.Repositories
         {
             using var conn = CreateConnection();
             return conn.QueryFirstOrDefault<ServiceInfo>(
-                @"SELECT
-                Id,
-                Title,
-                Url,
-                DisplayIndex
-                FROM ServiceInfos
+                @"SELECT * FROM ServiceInfos
                 WHERE Id = @Id",
                 new { Id = id }
             );
@@ -75,12 +65,7 @@ namespace PasswordManager.Repositories
         {
             using var conn = CreateConnection();
             return conn.QueryFirstOrDefault<ServiceInfo>(
-                @"SELECT
-                Id,
-                Title,
-                Url,
-                DisplayIndex
-                FROM ServiceInfos
+                @"SELECT * FROM ServiceInfos
                 WHERE Title = @Title",
                 new { Title = title }
             );
@@ -90,12 +75,7 @@ namespace PasswordManager.Repositories
         {
             using var conn = CreateConnection();
             return conn.QueryFirstOrDefault<ServiceInfo>(
-                @"SELECT
-                Id,
-                Title,
-                Url,
-                DisplayIndex
-                FROM ServiceInfos
+                @"SELECT * FROM ServiceInfos
                 WHERE Url = @Url",
                 new { Url = url }
             );
@@ -104,8 +84,10 @@ namespace PasswordManager.Repositories
         public void Create(ServiceInfo serviceInfo)
         {
             using var conn = CreateConnection();
-            conn.Execute(
-                @"INSERT INTO ServiceInfos (Title, Url, DisplayIndex) VALUES (@Title, @Url, @DisplayIndex)",
+            serviceInfo.Id = (long)conn.QuerySingle<long>(
+                @"INSERT INTO ServiceInfos (Title, Url, DisplayIndex)
+                    VALUES (@Title, @Url, @DisplayIndex);
+                    SELECT last_insert_rowid();",
                 serviceInfo
             );
         }

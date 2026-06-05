@@ -37,14 +37,14 @@ namespace PasswordManager.Repositories
         public IEnumerable<User> GetAll()
         {
             using var conn = CreateConnection();
-            return conn.Query<User>("SELECT Id, Name, DisplayIndex FROM Users");
+            return conn.Query<User>("SELECT * FROM Users");
         }
         public User? GetById(long id)
         {
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<User>(
-                "SELECT Id, Name, DisplayIndex FROM Users WHERE Id = @Id",
+                "SELECT * FROM Users WHERE Id = @Id",
                 new { Id = id }
             );
         }
@@ -53,7 +53,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<User>(
-                "SELECT Id, Name, DisplayIndex FROM Users WHERE Name = @Name",
+                "SELECT * FROM Users WHERE Name = @Name",
                 new { Name = name }
             );
         }

@@ -22,14 +22,14 @@ namespace PasswordManager.Repositories
         public IEnumerable<Cache> GetAll()
         {
             using var conn = CreateConnection();
-            return conn.Query<Cache>("SELECT Id, Url, ImageUrl, Title FROM Caches");
+            return conn.Query<Cache>("SELECT * FROM Caches");
         }
         public Cache? GetByUrl(string url)
         {
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<Cache>(
-                "SELECT Id, Url, ImageUrl, Title FROM Caches WHERE Url = @Url",
+                "SELECT * FROM Caches WHERE Url = @Url",
                 new { Url = url }
             );
         }

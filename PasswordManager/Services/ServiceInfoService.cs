@@ -42,8 +42,13 @@ namespace PasswordManager.Services
         }
         public void Create(ServiceInfo serviceInfo)
         {
-            long MaxDisplayIndex = Repo.GetAll().Max(u => u.DisplayIndex);
-            serviceInfo.DisplayIndex = MaxDisplayIndex + 1;
+            CheckValidation(serviceInfo);
+            long maxDisplayIndex = Repo
+                .GetAll()
+                .Select(u => u.DisplayIndex)
+                .DefaultIfEmpty(0)
+                .Max();
+            serviceInfo.DisplayIndex = maxDisplayIndex + 1;
             Repo.Create(serviceInfo);
         }
         public void Delete(long id)
@@ -52,6 +57,8 @@ namespace PasswordManager.Services
         }
         public void Update(ServiceInfo serviceInfo)
         {
+            CheckValidation(serviceInfo);
+
             var getServiceInfo = Repo.GetByTitle(serviceInfo.Title);
 
             if (getServiceInfo != null && getServiceInfo.Id != serviceInfo.Id)
@@ -69,6 +76,11 @@ namespace PasswordManager.Services
             return Repo.GetById(id);
         }
 
+        public ServiceInfo? Get(string title)
+        {
+            return Repo.GetByTitle(title);
+        }
+
         private void CheckValidation(ServiceInfo serviceInfo)
         {
             ArgumentNullException.ThrowIfNull(serviceInfo);
@@ -83,4 +95,5 @@ namespace PasswordManager.Services
                 throw new ArgumentException("Invalid URL format.");
             }
         }
+    }
 }

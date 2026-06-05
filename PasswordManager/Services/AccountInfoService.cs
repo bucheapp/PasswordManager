@@ -46,17 +46,24 @@ namespace PasswordManager.Services
         {
             CheckValidation(accountInfo);
 
-            if (Repo.GetByName(accountInfo.Name) != null)
+            if (Repo.GetByNameAndServiceInfoId(accountInfo.Name,accountInfo.ServiceInfoId) != null)
             {
                 throw new InvalidOperationException(
                     "An accountInfo with the same name already exists.");
             }
 
-            long MaxDisplayIndex = Repo.GetAll().Max(u => u.DisplayIndex);
-            accountInfo.DisplayIndex = MaxDisplayIndex + 1;
+            long maxDisplayIndex = Repo
+                .GetAll()
+                .Select(u => u.DisplayIndex)
+                .DefaultIfEmpty(0)
+                .Max();
+            accountInfo.DisplayIndex = maxDisplayIndex + 1;
             Repo.Create(accountInfo);
         }
+        public void Create(AccountInfo accountInfo, ServiceInfo serviceInfo)
+        {
 
+        }
         public void Delete(long id)
         {
             Repo.DeleteById(id);
@@ -83,6 +90,10 @@ namespace PasswordManager.Services
         public AccountInfo? Get(long id)
         {
             return Repo.GetById(id);
+        }
+        public List<AccountInfo> GetByServiceInfoId(long serviceInfoId)
+        {
+            return [.. Repo.GetByServiceInfoId(serviceInfoId)];
         }
 
         private void CheckValidation(AccountInfo accountInfo)
