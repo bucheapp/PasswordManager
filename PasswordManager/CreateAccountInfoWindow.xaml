@@ -8,7 +8,8 @@
         Title="Create Entry"
         Width="300"
         SizeToContent="Height"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
 
     <StackPanel Margin="10">
 
@@ -29,6 +30,7 @@
         <Button Content="OK"
                 Width="80"
                 HorizontalAlignment="Center"
-                Click="Ok_Click"/>
+                Click="Ok_Click"
+                IsDefault="True"/>
     </StackPanel>
 </Window>

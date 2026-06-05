@@ -112,6 +112,16 @@ namespace PasswordManager.Services
                 {
                     throw new ArgumentException("Password cannot be blank.");
                 }
+
+                if(accountInfo.Name.Length > 50)
+                {
+                    throw new ArgumentException("Account name must be less than 50 characters.");
+                }
+
+                if (accountInfo.Password.Length > 300)
+                {
+                    throw new ArgumentException("Account name must be less than 300 characters.");
+                }
             }
         }
     }

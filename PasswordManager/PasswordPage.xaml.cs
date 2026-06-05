@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Mail;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -41,21 +42,30 @@ namespace PasswordManager
         {
             List<ServiceInfo> serviceInfos = _serviceInfoService.GetAll();
 
+            if(serviceInfos.Count == 0)
+            {
+                EmptyMessage.Visibility = Visibility.Visible;
+            }
+
             foreach (var serviceInfo in serviceInfos)
             {
-                var serviceInfoParts = CreateServiceInfoParts(serviceInfo.Title);
+                var serviceInfoParts = CreateServiceInfoParts(serviceInfo.Id,serviceInfo.Title);
                 ServicePanel.Children.Add(serviceInfoParts);
                 List<AccountInfo> accountInfos = _accountInfoService.GetByServiceInfoId(serviceInfo.Id);
                 foreach (var accountInfo in accountInfos)
                 {
-                    InsertAccountInfoParts(serviceInfoParts, accountInfo.Name, accountInfo.AuthType);
+                    InsertAccountInfoParts(serviceInfoParts,accountInfo.Id, accountInfo.Name, accountInfo.AuthType);
                 }
             }
         }
 
         public void Add_Click(object sender, RoutedEventArgs e)
         {
-            CreateServiceInfoWindow serviceInfoWindow = new CreateServiceInfoWindow("","","","");
+            ShowCreateServiceInfoWindow("","","","");
+        }
+        private void ShowCreateServiceInfoWindow(string prevTitle,string prevUrl,string prevName,string prevPassword)
+        {
+            CreateServiceInfoWindow serviceInfoWindow = new CreateServiceInfoWindow(prevTitle,prevUrl,prevName,prevPassword);
             if (serviceInfoWindow.ShowDialog() == true)
             {
                 string title = serviceInfoWindow.ServiceTitle;
@@ -73,7 +83,7 @@ namespace PasswordManager
                     }
 
                     ServiceInfo? serviceInfo = _serviceInfoService.Get(title);
-                    if(serviceInfo == null)
+                    if (serviceInfo == null)
                     {
                         serviceInfo = new ServiceInfo();
                         serviceInfo.Title = title;
@@ -94,7 +104,8 @@ namespace PasswordManager
                     {
                         var addr = new MailAddress(name);
                         accountInfo.AuthType = AuthType.EmailPassword;
-                    } catch
+                    }
+                    catch
                     {
                         accountInfo.AuthType = AuthType.UsernamePassword;
                     }
@@ -104,22 +115,25 @@ namespace PasswordManager
 
                     _accountInfoService.Create(accountInfo);
 
-                    if(serviceInfoId == -1)
+                    if (serviceInfoId == -1)
                     {
                         Border? serviceInfoParts = GetServiceInfoPartsByHeader(serviceInfo.Title);
                         if (serviceInfoParts != null)
                         {
-                            InsertAccountInfoParts(serviceInfoParts, accountInfo.Name, accountInfo.AuthType);
+                            InsertAccountInfoParts(serviceInfoParts,accountInfo.Id, accountInfo.Name, accountInfo.AuthType);
                         }
-                    } else
-                    {
-                        var serviceInfoParts = CreateServiceInfoParts(serviceInfo.Title);
-                        ServicePanel.Children.Add(serviceInfoParts);
-                        InsertAccountInfoParts(serviceInfoParts,accountInfo.Name, accountInfo.AuthType);
                     }
-                } catch(ArgumentException e2)
+                    else
+                    {
+                        var serviceInfoParts = CreateServiceInfoParts(serviceInfoId,serviceInfo.Title);
+                        ServicePanel.Children.Add(serviceInfoParts);
+                        InsertAccountInfoParts(serviceInfoParts,accountInfo.Id, accountInfo.Name, accountInfo.AuthType);
+                        EmptyMessage.Visibility = Visibility.Collapsed;
+                    }
+                }
+                catch (Exception e2) when (e2 is ArgumentException || e2 is InvalidOperationException)
                 {
-                    if(serviceInfoId != -1)
+                    if (serviceInfoId != -1)
                     {
                         _serviceInfoService.Delete(serviceInfoId);
                     }
@@ -128,25 +142,79 @@ namespace PasswordManager
                         "Error",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
+
+                    ShowCreateServiceInfoWindow(title,url,name,password);
                 }
             }
         }
-
         public void Insert_Click(object sender, RoutedEventArgs e)
         {
-            CreateAccountInfoWindow accountInfoWindow = new CreateAccountInfoWindow("");
-            accountInfoWindow.Show();
+            var current = sender as FrameworkElement;
+
+            while (current != null && current is not Expander)
+            {
+                current = current.Parent as FrameworkElement;
+            }
+
+            var expander = current as Expander;
+
+            if(expander != null)
+            {
+                ShowCreateAccountInfoWindow(expander, "", "");
+            }
+        }
+        private void ShowCreateAccountInfoWindow(Expander parent,string prevName,string prevPassword)
+        {
+            CreateAccountInfoWindow accountInfoWindow = new CreateAccountInfoWindow(parent.Header?.ToString() ?? "", prevName,prevPassword);
             if (accountInfoWindow.ShowDialog() == true)
             {
                 string name = accountInfoWindow.AccountName;
                 string password = accountInfoWindow.AccountPassword;
-            } else
-            {
+                string confirmPassword = accountInfoWindow.ConfirmPassword;
 
+                try
+                {
+                    if (password != confirmPassword)
+                    {
+                        throw new ArgumentException("Passwords do not match.");
+                    }
+
+                    AccountInfo accountInfo = new();
+                    accountInfo.Name = name;
+                    // Check if it's in email format.
+                    try
+                    {
+                        var addr = new MailAddress(name);
+                        accountInfo.AuthType = AuthType.EmailPassword;
+                    }
+                    catch
+                    {
+                        accountInfo.AuthType = AuthType.UsernamePassword;
+                    }
+
+                    accountInfo.Password = password;
+                    accountInfo.ServiceInfoId = (long)parent.Tag;
+
+                    _accountInfoService.Create(accountInfo);
+
+                    if (parent.Parent != null)
+                    {
+                        InsertAccountInfoParts((Border)parent.Parent,accountInfo.Id, accountInfo.Name, accountInfo.AuthType);
+                    }
+                }
+                catch (Exception e2) when (e2 is ArgumentException || e2 is InvalidOperationException)
+                {
+                    MessageBox.Show(
+                        e2.Message,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    ShowCreateAccountInfoWindow(parent, name, password);
+                }
             }
         }
-
-        private Border CreateServiceInfoParts(string title)
+        private Border CreateServiceInfoParts(long id,string title)
         {
             var border = new Border
             {
@@ -161,7 +229,8 @@ namespace PasswordManager
             {
                 Header = title,
                 IsExpanded = false,
-                Padding = new Thickness(10)
+                Padding = new Thickness(10),
+                Tag = id
             };
 
             var stackPanel = new StackPanel
@@ -182,7 +251,7 @@ namespace PasswordManager
                 Cursor = Cursors.Hand
             };
 
-            addButton.Click += Add_Click;
+            addButton.Click += Insert_Click;
 
             var template = new ControlTemplate(typeof(Button));
 
@@ -233,7 +302,7 @@ namespace PasswordManager
             return border;
         }
 
-        private void InsertAccountInfoParts(Border serviceInfoParts,string name,AuthType authType)
+        private void InsertAccountInfoParts(Border serviceInfoParts,long id, string name, AuthType authType)
         {
             if (serviceInfoParts.Child is not Expander expander)
                 return;
@@ -242,18 +311,15 @@ namespace PasswordManager
                 return;
 
             string icon;
-            string text;
 
             switch (authType)
             {
                 case AuthType.EmailPassword:
                     icon = "\uE715";
-                    text = name;
                     break;
 
                 case AuthType.UsernamePassword:
                     icon = "\uE77B";
-                    text = name;
                     break;
 
                 default:
@@ -262,53 +328,235 @@ namespace PasswordManager
 
             var itemBorder = new Border
             {
-                Background = new SolidColorBrush(
-                    (Color)ColorConverter.ConvertFromString("#F5F7FA")),
-                BorderBrush = new SolidColorBrush(
-                    (Color)ColorConverter.ConvertFromString("#E0E0E0")),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F5F7FA")),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E0E0E0")),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(10),
-                Margin = authType == AuthType.EmailPassword
-                    ? new Thickness(0, 0, 0, 5)
-                    : new Thickness(0, 0, 0, 5)
+                Margin = new Thickness(0, 0, 0, 5),
+                Tag = id
             };
 
             var grid = new Grid();
 
-            grid.ColumnDefinitions.Add(
-                new ColumnDefinition { Width = GridLength.Auto });
-
-            grid.ColumnDefinitions.Add(
-                new ColumnDefinition
-                {
-                    Width = new GridLength(1, GridUnitType.Star)
-                });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             var iconText = new TextBlock
             {
                 Text = icon,
                 FontFamily = new FontFamily("Segoe Fluent Icons"),
                 FontSize = 14,
-                Margin = new Thickness(0, 0, 8, 0)
+                Margin = new Thickness(0, 0, 8, 0),
+                VerticalAlignment = VerticalAlignment.Center
             };
 
             var valueText = new TextBlock
             {
-                Text = text
+                Text = name,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(valueText, 1);
+
+            var rightIcons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center
             };
 
-            Grid.SetColumn(valueText, 1);
+            var copyIcon = new TextBlock
+            {
+                Text = "\uE8C8",
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 14,
+                Margin = new Thickness(0, 0, 10, 0),
+                Cursor = Cursors.Hand,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            copyIcon.MouseUp += Copy_Click;
+
+            var editIcon = new TextBlock
+            {
+                Text = "\uEB7E",
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 14,
+                Margin = new Thickness(0, 0, 10, 0),
+                Cursor = Cursors.Hand,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            editIcon.MouseUp += Edit_Click;
+
+            var deleteIcon = new TextBlock
+            {
+                Text = "\uE74D",
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 14,
+                Cursor = Cursors.Hand,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            deleteIcon.MouseUp += Delete_Click;
+
+            rightIcons.Children.Add(copyIcon);
+            rightIcons.Children.Add(editIcon);
+            rightIcons.Children.Add(deleteIcon);
+
+            Grid.SetColumn(rightIcons, 2);
 
             grid.Children.Add(iconText);
             grid.Children.Add(valueText);
+            grid.Children.Add(rightIcons);
 
             itemBorder.Child = grid;
 
             int insertIndex = Math.Max(0, stackPanel.Children.Count - 1);
             stackPanel.Children.Insert(insertIndex, itemBorder);
         }
+        private void Copy_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not TextBlock tb)
+                return;
 
+            var itemBorder = FindParent<Border>(tb);
+            if (itemBorder == null)
+                return;
+
+            if (itemBorder.Tag is not long id)
+                return;
+
+            AccountInfo? accountInfo = _accountInfoService.Get(id);
+            if (accountInfo == null)
+                return;
+
+            Clipboard.SetText(accountInfo.Password);
+        }
+        public void Edit_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not TextBlock tb)
+                return;
+            var itemBorder = FindParent<Border>(tb);
+            if (itemBorder == null)
+                return;
+
+            if (itemBorder.Tag is not long id)
+                return;
+
+            AccountInfo? accountInfo = _accountInfoService.Get(id);
+
+            if (accountInfo == null)
+                return;
+
+            ShowUpdateAccountInfoWindow(itemBorder, accountInfo,accountInfo.Name,accountInfo.Password);
+        }
+        private void ShowUpdateAccountInfoWindow(Border itemBorder,AccountInfo accountInfo,string prevName,string prevPassword)
+        {
+            UpdateAccountInfoWindow accountInfoWindow = new UpdateAccountInfoWindow(prevName,prevPassword);
+            if (accountInfoWindow.ShowDialog() == true)
+            {
+                string newName = accountInfoWindow.NewAccountName;
+                string newPassword = accountInfoWindow.NewAccountPassword;
+                string confirmPassword = accountInfoWindow.ConfirmPassword;
+                try
+                {
+                    if (accountInfo.Password != newPassword && newPassword != confirmPassword)
+                    {
+                        throw new ArgumentException("Passwords do not match.");
+                    }
+
+                    if (accountInfo.Name == newName && accountInfo.Password == newPassword)
+                    {
+                        throw new InvalidOperationException("No changes were made.");
+                    }
+
+                    AccountInfo newAccountInfo = new AccountInfo();
+                    newAccountInfo.Id = accountInfo.Id;
+                    newAccountInfo.Name = accountInfo.Name;
+                    newAccountInfo.Password = accountInfo.Password;
+                    newAccountInfo.AuthType = accountInfo.AuthType;
+                    newAccountInfo.ServiceInfoId = accountInfo.ServiceInfoId;
+
+                    if (newAccountInfo.Name != newName)
+                    {
+                        newAccountInfo.Name = newName;
+                    }
+
+                    if (newAccountInfo.Password != newPassword)
+                    {
+                        newAccountInfo.Password = newPassword;
+                    }
+
+                    _accountInfoService.Update(newAccountInfo);
+
+                    var grid = itemBorder.Child as Grid;
+                    if (grid == null)
+                        return;
+
+                    var valueText = grid.Children
+                        .OfType<TextBlock>()
+                        .FirstOrDefault(x => Grid.GetColumn(x) == 1);
+
+                    if (valueText != null)
+                    {
+                        valueText.Text = newName;
+                    }
+                }
+                catch (Exception e2) when (e2 is ArgumentException || e2 is InvalidOperationException)
+                {
+                    MessageBox.Show(
+                        e2.Message,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    ShowUpdateAccountInfoWindow(itemBorder,accountInfo,newName,newPassword);
+                }
+            }
+        }
+        public void Delete_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not TextBlock tb)
+                return;
+
+            var itemBorder = FindParent<Border>(tb);
+            if (itemBorder == null)
+                return;
+
+            var result = MessageBox.Show(
+                "Are you sure you want to delete this account information?",
+                "Delete Account Information",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes)
+                return;
+
+            if (itemBorder.Tag is not long id)
+                return;
+
+            AccountInfo? accountInfo = _accountInfoService.Get(id);
+            if (accountInfo == null)
+                return;
+
+            _accountInfoService.Delete(accountInfo.Id);
+
+            (itemBorder.Parent as StackPanel)?.Children.Remove(itemBorder);
+        }
+        private T? FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            var parent = VisualTreeHelper.GetParent(child);
+
+            while (parent != null)
+            {
+                if (parent is T target)
+                    return target;
+
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+
+            return null;
+        }
         private Border? GetServiceInfoPartsByHeader(string header)
         {
             foreach (var child in ServicePanel.Children)

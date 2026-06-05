@@ -94,8 +94,10 @@ namespace PasswordManager.Repositories
         {
             using var conn = CreateConnection();
 
-            conn.Execute(
-                @"INSERT INTO AccountInfos (Name, Password, AuthType, DisplayIndex, ServiceInfoId) VALUES (@Name, @Password, @AuthType, @DisplayIndex, @ServiceInfoId)",
+            accountInfo.Id = (long)conn.QuerySingle<long>(
+                    @"INSERT INTO AccountInfos (Name, Password, AuthType, DisplayIndex, ServiceInfoId)
+                    VALUES (@Name, @Password, @AuthType, @DisplayIndex, @ServiceInfoId);
+                    SELECT last_insert_rowid();",
                 accountInfo
             );
         }

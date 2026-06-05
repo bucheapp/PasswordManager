@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PasswordManager.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,29 +16,23 @@ using System.Windows.Shapes;
 namespace PasswordManager
 {
     /// <summary>
-    /// CreateServiceInfoWindow.xaml の相互作用ロジック
+    /// UpdateAccountInfoWindow.xaml の相互作用ロジック
     /// </summary>
-    public partial class CreateAccountInfoWindow : Window
+    public partial class UpdateAccountInfoWindow : Window
     {
-        public string AccountName => NameBox.Text;
-        public string AccountPassword => PasswordBox.Password;
+        public string NewAccountName => NameBox.Text;
+        public string NewAccountPassword => PasswordBox.Password;
         public string ConfirmPassword => ConfirmPasswordBox.Password;
-        public CreateAccountInfoWindow(
-            string title,
-            string prevName,
-            string prevPassword
-            )
+        public UpdateAccountInfoWindow(string name,string password)
         {
             InitializeComponent();
-            Title = $"Create Entry - {title}";
-            NameBox.Text = prevName;
-            PasswordBox.Password = prevPassword;
+            NameBox.Text = name;
+            PasswordBox.Password = password;
         }
 
         private void Ok_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = true;
-
             Close();
         }
     }
