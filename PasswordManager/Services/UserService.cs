@@ -13,7 +13,6 @@ namespace PasswordManager.Services
     public class UserService : IUserService
     {
         IUserRepository _userRepository;
-
         public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;

@@ -31,17 +31,17 @@ namespace PasswordManager
         private readonly ISettingsService _settingsService;
         private readonly ICacheService _cacheService;
         private readonly IUserService _userService;
+        private readonly IWindowService _windowService;
         private readonly PasswordPage _passwordPage;
         //private readonly IWebSiteFetchService _webSiteFetchService;
-        private User? _currentUser;
 
         public MainWindow(
             IAccountInfoService accountInfoService,
             IServiceInfoService serviceInfoService,
             ISettingsService settingsService,
             ICacheService cacheService,
-            IUserService userService
-,
+            IUserService userService,
+            IWindowService windowService,
             PasswordPage passwordPage
             //IWebSiteFetchService webSiteFetchService
             )
@@ -52,6 +52,7 @@ namespace PasswordManager
             _settingsService = settingsService;
             _cacheService = cacheService;
             _userService = userService;
+            _windowService = windowService;
             _passwordPage = passwordPage;
             //_webSiteFetchService = webSiteFetchService;
 
@@ -76,13 +77,15 @@ namespace PasswordManager
         {
             List<User> users = _userService.GetAll();
             string? password = null;
+            User? selectedUser = null;
 
             if (users.Count == 0)
             {
-                var createUserWindow = ShowCreateUserWindow("","");
+                var createUserWindow = _windowService.ShowCreateUserWindow("","");
                 if(createUserWindow != null)
                 {
                     password = createUserWindow.Password;
+                    selectedUser = createUserWindow.CreatedUser;
                 } else
                 {
                     System.Windows.Application.Current.Shutdown();
@@ -90,11 +93,11 @@ namespace PasswordManager
                 }
             } else
             {
-                var selectUserWindow = ShowSelectUserWindow(users);
+                var selectUserWindow = _windowService.ShowSelectUserWindow(users);
                 if (selectUserWindow != null)
                 {
-                    _currentUser = selectUserWindow.SelectedUser;
                     password = selectUserWindow.Password;
+                    selectedUser = selectUserWindow.SelectedUser;
                 } else
                 {
                     System.Windows.Application.Current.Shutdown();
@@ -102,14 +105,14 @@ namespace PasswordManager
                 }
             }
 
-            Title = $"Password Manager - {_currentUser?.Name}";
-            
-            if(password != null)
+            Title = $"Password Manager - {selectedUser?.Name}";
+
+            if (password != null)
             {
                 try
                 {
-                    _accountInfoService.SetDB(_currentUser?.Id ?? users[0].Id, password);
-                    _serviceInfoService.SetDB(_currentUser?.Id ?? users[0].Id, password);
+                    _accountInfoService.SetDB(selectedUser?.Id ?? users[0].Id, password);
+                    _serviceInfoService.SetDB(selectedUser?.Id ?? users[0].Id, password);
                 }
                 catch (SqliteException e)
                 {
@@ -127,90 +130,6 @@ namespace PasswordManager
                 List<ServiceInfo> serviceInfos = _serviceInfoService.GetAll();
                 _passwordPage.Init();
                 MainFrame.Navigate(_passwordPage);
-            }
-        }
-
-        private SelectUserWindow? ShowSelectUserWindow(List<User> users)
-        {
-            AppSettings appSettings = _settingsService.LoadAppSettings();
-
-            User? defaultUser = _userService.Get(appSettings.DefaultUserId);
-            if(defaultUser == null)
-            {
-                AppSettings newAppSettings = new()
-                {
-                    DefaultUserId = users[0].Id
-                };
-
-                _settingsService.SaveAppSettings(newAppSettings);
-
-                return ShowSelectUserWindow(users);
-            }
-
-            var window = new SelectUserWindow(users, defaultUser);
-
-            if (window.ShowDialog() == true)
-            {
-                if (string.IsNullOrEmpty(window.Password))
-                {
-                    MessageBox.Show("Please enter your password.");
-                    return ShowSelectUserWindow(users);
-                }
-                return window;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        private CreateUserWindow? ShowCreateUserWindow(string prevName,string prevPassword)
-        {
-            var window = new CreateUserWindow(prevName,prevPassword);
-
-            if (window.ShowDialog() == true)
-            {
-                string name = window.UserName;
-                string password = window.Password;
-                string confirmPassword = window.ConfirmPassword;
-
-                User user = new()
-                {
-                    Id = 1,
-                    Name = name,
-                    DisplayIndex = 0
-                };
-
-                AppSettings appSettings = new()
-                {
-                    DefaultUserId = 1
-                };
-                _settingsService.SaveAppSettings(appSettings);
-
-                try
-                {
-                    if (password != confirmPassword)
-                    {
-                        throw new ArgumentException("Passwords do not match.");
-                    }
-                    _userService.Create(user, password);
-                    _currentUser = user;
-
-                    return window;
-                }
-                catch (ArgumentException e)
-                {
-                    MessageBox.Show(
-                        e.Message,
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-
-                    return ShowCreateUserWindow(name,password);
-                }
-            } else
-            {
-                return null;
             }
         }
         private void MainWindow_Closing(object? sender, CancelEventArgs e)

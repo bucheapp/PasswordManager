@@ -61,8 +61,10 @@ namespace PasswordManager.Repositories
         {
             using var conn = CreateConnection();
 
-            conn.Execute(
-                @"INSERT INTO Users (Name, DisplayIndex) VALUES (@Name, @DisplayIndex)",
+            user.Id = (long)conn.QuerySingle<long>(
+                @"INSERT INTO Users (Name, DisplayIndex)
+                  VALUES (@Name, @DisplayIndex);
+                  SELECT last_insert_rowid();",
                 user
             );
         }

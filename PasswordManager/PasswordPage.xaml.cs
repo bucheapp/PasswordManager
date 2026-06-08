@@ -1,4 +1,6 @@
-﻿using PasswordManager.Models;
+﻿using Microsoft.Data.Sqlite;
+using Microsoft.Win32;
+using PasswordManager.Models;
 using PasswordManager.Services;
 using System;
 using System.Collections.Generic;
@@ -8,6 +10,7 @@ using System.Net.Mail;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Policy;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,6 +21,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.IO;
 
 namespace PasswordManager
 {
@@ -28,14 +32,20 @@ namespace PasswordManager
     {
         private readonly IServiceInfoService _serviceInfoService;
         private readonly IAccountInfoService _accountInfoService;
+        private readonly IUserService _userService;
+        private readonly IWindowService _windowService;
         public PasswordPage(
             IServiceInfoService serviceInfoService,
-            IAccountInfoService accountInfoService
+            IAccountInfoService accountInfoService,
+            IUserService userService,
+            IWindowService windowService
             )
         {
             InitializeComponent();
             _serviceInfoService = serviceInfoService;
             _accountInfoService = accountInfoService;
+            _userService = userService;
+            _windowService = windowService;
         }
 
         public void Init()
@@ -88,7 +98,7 @@ namespace PasswordManager
                         serviceInfo = new ServiceInfo();
                         serviceInfo.Title = title;
 
-                        if (!string.IsNullOrEmpty(url))
+                        if (!string.IsNullOrWhiteSpace(url))
                         {
                             serviceInfo.Url = url;
                         }
@@ -214,7 +224,7 @@ namespace PasswordManager
                 }
             }
         }
-        private Border CreateServiceInfoParts(long id,string title)
+        private Border CreateServiceInfoParts(long id, string title)
         {
             var border = new Border
             {
@@ -238,68 +248,204 @@ namespace PasswordManager
                 Margin = new Thickness(0, 10, 0, 0)
             };
 
+            ControlTemplate CreateTemplate(string color, string hover, string pressed)
+            {
+                var template = new ControlTemplate(typeof(Button));
+
+                var borderFactory = new FrameworkElementFactory(typeof(Border));
+                borderFactory.Name = "border";
+                borderFactory.SetValue(Border.BackgroundProperty,
+                    new SolidColorBrush((Color)ColorConverter.ConvertFromString(color)));
+                borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(20));
+
+                var presenterFactory = new FrameworkElementFactory(typeof(ContentPresenter));
+                presenterFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+                presenterFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+
+                borderFactory.AppendChild(presenterFactory);
+                template.VisualTree = borderFactory;
+
+                var hoverTrigger = new Trigger
+                {
+                    Property = UIElement.IsMouseOverProperty,
+                    Value = true
+                };
+                hoverTrigger.Setters.Add(
+                    new Setter(
+                        Border.BackgroundProperty,
+                        new SolidColorBrush((Color)ColorConverter.ConvertFromString(hover)),
+                        "border"));
+
+                var pressedTrigger = new Trigger
+                {
+                    Property = Button.IsPressedProperty,
+                    Value = true
+                };
+                pressedTrigger.Setters.Add(
+                    new Setter(
+                        Border.BackgroundProperty,
+                        new SolidColorBrush((Color)ColorConverter.ConvertFromString(pressed)),
+                        "border"));
+
+                template.Triggers.Add(hoverTrigger);
+                template.Triggers.Add(pressedTrigger);
+
+                return template;
+            }
+
             var addButton = new Button
             {
                 Width = 23,
                 Height = 23,
-                HorizontalAlignment = HorizontalAlignment.Left,
                 Margin = new Thickness(5, 5, 0, 0),
                 FontFamily = new FontFamily("Segoe MDL2 Assets"),
                 Content = "\uE710",
                 FontSize = 8,
                 Foreground = Brushes.White,
-                Cursor = Cursors.Hand
+                Cursor = Cursors.Hand,
+                Template = CreateTemplate("#FF9800", "#F57C00", "#E65100")
             };
-
             addButton.Click += Insert_Click;
 
-            var template = new ControlTemplate(typeof(Button));
-
-            var borderFactory = new FrameworkElementFactory(typeof(Border));
-            borderFactory.Name = "border";
-            borderFactory.SetValue(Border.BackgroundProperty,
-                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF9800")));
-            borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(20));
-
-            var presenterFactory = new FrameworkElementFactory(typeof(ContentPresenter));
-            presenterFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            presenterFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-
-            borderFactory.AppendChild(presenterFactory);
-            template.VisualTree = borderFactory;
-
-            var hoverTrigger = new Trigger
+            var editButton = new Button
             {
-                Property = UIElement.IsMouseOverProperty,
-                Value = true
+                Width = 23,
+                Height = 23,
+                Margin = new Thickness(5, 5, 0, 0),
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                Content = "\uEB7E",
+                FontSize = 10,
+                Foreground = Brushes.White,
+                Cursor = Cursors.Hand,
+                Template = CreateTemplate("#2196F3", "#1976D2", "#0D47A1")
             };
-            hoverTrigger.Setters.Add(
-                new Setter(
-                    Border.BackgroundProperty,
-                    new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F57C00")),
-                    "border"));
+            editButton.Click += EditServiceInfo_Click;
 
-            var pressedTrigger = new Trigger
+            var deleteButton = new Button
             {
-                Property = Button.IsPressedProperty,
-                Value = true
+                Width = 23,
+                Height = 23,
+                Margin = new Thickness(5, 5, 0, 0),
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                Content = "\uE74D",
+                FontSize = 10,
+                Foreground = Brushes.White,
+                Cursor = Cursors.Hand,
+                Template = CreateTemplate("#E53935", "#D32F2F", "#B71C1C")
             };
-            pressedTrigger.Setters.Add(
-                new Setter(
-                    Border.BackgroundProperty,
-                    new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E65100")),
-                    "border"));
+            deleteButton.Click += DeleteServiceInfo_Click;
 
-            template.Triggers.Add(hoverTrigger);
-            template.Triggers.Add(pressedTrigger);
+            var buttonPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
 
-            addButton.Template = template;
+            buttonPanel.Children.Add(addButton);
+            buttonPanel.Children.Add(editButton);
+            buttonPanel.Children.Add(deleteButton);
 
-            stackPanel.Children.Add(addButton);
+            stackPanel.Children.Add(buttonPanel);
+
             expander.Content = stackPanel;
             border.Child = expander;
 
             return border;
+        }
+
+        public void EditServiceInfo_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not DependencyObject obj)
+                return;
+            var expander = FindParent<Expander>(obj);
+            if (expander == null)
+                return;
+            var id = expander.Tag;
+
+            ServiceInfo? serviceInfo = _serviceInfoService.Get((long)id);
+
+             if (serviceInfo != null)
+             {
+                 ShowUpdateServiceInfoWindow(expander,serviceInfo,serviceInfo.Title,serviceInfo.Url ?? "");
+             }
+        }
+        public void ShowUpdateServiceInfoWindow(Expander expander,ServiceInfo serviceInfo,string prevTitle,string prevUrl)
+        {
+            UpdateServiceInfoWindow serviceInfoWindow = new UpdateServiceInfoWindow(prevTitle,prevUrl);
+            if (serviceInfoWindow.ShowDialog() == true)
+            {
+                string newTitle = serviceInfoWindow.NewServiceTitle;
+                string? newUrl = serviceInfoWindow.NewServiceUrl;
+                if(string.IsNullOrWhiteSpace(newUrl))
+                {
+                    newUrl = null;
+                }
+
+                try
+                {
+                    if (serviceInfo.Title == newTitle && serviceInfo.Url == newUrl)
+                    {
+                        throw new InvalidOperationException("No changes were made.");
+                    }
+
+                    ServiceInfo newServiceInfo = new ServiceInfo();
+                    newServiceInfo.Id = serviceInfo.Id;
+                    newServiceInfo.Title = serviceInfo.Title;
+                    newServiceInfo.Url = serviceInfo.Url;
+
+                    if (newServiceInfo.Title != newTitle)
+                    {
+                        newServiceInfo.Title = newTitle;
+                    }
+                    if (newServiceInfo.Url != newUrl)
+                    {
+                        newServiceInfo.Url = newUrl;
+                    }
+
+                    _serviceInfoService.Update(newServiceInfo);
+                    expander.Header = newTitle;
+                }
+                catch (Exception e2) when (e2 is ArgumentException || e2 is InvalidOperationException)
+                {
+                    MessageBox.Show(
+                        e2.Message,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    ShowUpdateServiceInfoWindow(expander,serviceInfo,newTitle,newUrl ?? "");
+                }
+            }
+        }
+        public void DeleteServiceInfo_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not DependencyObject obj)
+                return;
+
+            var expander = FindParent<Expander>(obj);
+            if (expander == null)
+                return;
+
+            var id = expander.Tag;
+
+            var result = MessageBox.Show(
+                "Are you sure you want to delete this service information? All related account information will also be deleted.",
+                "Delete Service Information",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                _serviceInfoService.Delete((long)id);
+                Border border = (Border)expander.Parent;
+                (border.Parent as StackPanel)?.Children.Remove(border);
+
+                List<ServiceInfo> serviceInfos = _serviceInfoService.GetAll();
+                if (serviceInfos.Count == 0)
+                {
+                    EmptyMessage.Visibility = Visibility.Visible;
+                }
+            }
+                
         }
 
         private void InsertAccountInfoParts(Border serviceInfoParts,long id, string name, AuthType authType)
@@ -375,7 +521,7 @@ namespace PasswordManager
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            copyIcon.MouseUp += Copy_Click;
+            copyIcon.MouseUp += CopyAccountInfo_Click;
 
             var editIcon = new TextBlock
             {
@@ -387,7 +533,7 @@ namespace PasswordManager
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            editIcon.MouseUp += Edit_Click;
+            editIcon.MouseUp += EditAccountInfo_Click;
 
             var deleteIcon = new TextBlock
             {
@@ -398,7 +544,7 @@ namespace PasswordManager
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            deleteIcon.MouseUp += Delete_Click;
+            deleteIcon.MouseUp += DeleteAccountInfo_Click;
 
             rightIcons.Children.Add(copyIcon);
             rightIcons.Children.Add(editIcon);
@@ -415,7 +561,7 @@ namespace PasswordManager
             int insertIndex = Math.Max(0, stackPanel.Children.Count - 1);
             stackPanel.Children.Insert(insertIndex, itemBorder);
         }
-        private void Copy_Click(object sender, MouseButtonEventArgs e)
+        private void CopyAccountInfo_Click(object sender, MouseButtonEventArgs e)
         {
             if (sender is not TextBlock tb)
                 return;
@@ -433,7 +579,7 @@ namespace PasswordManager
 
             Clipboard.SetText(accountInfo.Password);
         }
-        public void Edit_Click(object sender, RoutedEventArgs e)
+        public void EditAccountInfo_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not TextBlock tb)
                 return;
@@ -515,7 +661,7 @@ namespace PasswordManager
                 }
             }
         }
-        public void Delete_Click(object sender, RoutedEventArgs e)
+        public void DeleteAccountInfo_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not TextBlock tb)
                 return;
@@ -556,6 +702,93 @@ namespace PasswordManager
             }
 
             return null;
+        }
+        public void SaveAsJson_Click(object sender, RoutedEventArgs e)
+        {
+            List<ServiceInfo> serviceInfos = _serviceInfoService.GetAll();
+            string json = JsonSerializer.Serialize(serviceInfos, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+
+            var dialog = new SaveFileDialog
+            {
+                Title = "Save file",
+                Filter = "Json file (*.json)|*.json|All file (*.*)|*.*",
+                FileName = ""
+            };
+
+            bool? result = dialog.ShowDialog();
+
+            if (result == true)
+            {
+                string filePath = dialog.FileName;
+
+                File.WriteAllText(filePath, json);
+            }
+        }
+        public void AddAccountInfo_Click(object sender, RoutedEventArgs e)
+        {
+            ShowCreateServiceInfoWindow("", "", "", "");
+        }
+        public void Exit_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Application.Current.Shutdown();
+        }
+        public void CreateUser_Click(object sender, RoutedEventArgs e)
+        {
+            var createUserWindow = _windowService.ShowCreateUserWindow("", "");
+            if (createUserWindow == null)
+            {
+                return;
+            }
+
+            string password = createUserWindow.Password;
+            User? currentUser = createUserWindow.CreatedUser;
+
+            if (currentUser != null && password != null)
+            {
+                SetNewPage(currentUser,password);
+            }
+        }
+        public void SelectUser_Click(object sender, RoutedEventArgs e)
+        {
+            List<User> users = _userService.GetAll();
+            var selectUserWindow = _windowService.ShowSelectUserWindow(users);
+            if (selectUserWindow == null)
+            {
+                return;
+            }
+
+            string password = selectUserWindow.Password;
+            User? currentUser = selectUserWindow.SelectedUser;
+
+            if (currentUser != null && password != null)
+            {
+                SetNewPage(currentUser,password);
+            }
+        }
+        private void SetNewPage(User currentUser,string password)
+        {
+            try
+            {
+                _accountInfoService.SetDB(currentUser.Id, password);
+                _serviceInfoService.SetDB(currentUser.Id, password);
+            }
+            catch (SqliteException e2)
+            {
+                MessageBox.Show(
+                    e2.Message,
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            Window.GetWindow(this).Title = $"Password Manager - {currentUser?.Name}";
+            ServicePanel.Children.Clear();
+            Init();
         }
         private Border? GetServiceInfoPartsByHeader(string header)
         {
