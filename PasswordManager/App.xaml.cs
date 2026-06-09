@@ -50,6 +50,7 @@ namespace PasswordManager
             services.AddSingleton<ICacheService, CacheService>();
             services.AddSingleton<IUserService, UserService>();
             services.AddSingleton<IWindowService, WindowService>();
+            services.AddSingleton<IServiceInfoToTextService, ServiceInfoToTextService>();
             //services.AddSingleton<IWebSiteFetchService, WebSiteFetchService>();
 
             // Window

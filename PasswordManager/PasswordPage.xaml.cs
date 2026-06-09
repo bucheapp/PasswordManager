@@ -34,11 +34,13 @@ namespace PasswordManager
         private readonly IAccountInfoService _accountInfoService;
         private readonly IUserService _userService;
         private readonly IWindowService _windowService;
+        private readonly IServiceInfoToTextService _serviceInfoToTextService;
         public PasswordPage(
             IServiceInfoService serviceInfoService,
             IAccountInfoService accountInfoService,
             IUserService userService,
-            IWindowService windowService
+            IWindowService windowService,
+            IServiceInfoToTextService serviceInfoToTextService
             )
         {
             InitializeComponent();
@@ -46,6 +48,7 @@ namespace PasswordManager
             _accountInfoService = accountInfoService;
             _userService = userService;
             _windowService = windowService;
+            _serviceInfoToTextService = serviceInfoToTextService;
         }
 
         public void Init()
@@ -352,7 +355,6 @@ namespace PasswordManager
 
             return border;
         }
-
         public void EditServiceInfo_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not DependencyObject obj)
@@ -447,7 +449,6 @@ namespace PasswordManager
             }
                 
         }
-
         private void InsertAccountInfoParts(Border serviceInfoParts,long id, string name, AuthType authType)
         {
             if (serviceInfoParts.Child is not Expander expander)
@@ -703,19 +704,12 @@ namespace PasswordManager
 
             return null;
         }
-        public void SaveAsJson_Click(object sender, RoutedEventArgs e)
+        public void Save_Click(object sender, RoutedEventArgs e)
         {
-            List<ServiceInfo> serviceInfos = _serviceInfoService.GetAll();
-            string json = JsonSerializer.Serialize(serviceInfos, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-
             var dialog = new SaveFileDialog
             {
                 Title = "Save file",
-                Filter = "Json file (*.json)|*.json|All file (*.*)|*.*",
-                FileName = ""
+                Filter = "Text file (*.txt)|*.txt|All file (*.*)|*.*"
             };
 
             bool? result = dialog.ShowDialog();
@@ -724,7 +718,7 @@ namespace PasswordManager
             {
                 string filePath = dialog.FileName;
 
-                File.WriteAllText(filePath, json);
+                File.WriteAllText(filePath, _serviceInfoToTextService.Convert(_serviceInfoService.GetAll()));
             }
         }
         public void AddAccountInfo_Click(object sender, RoutedEventArgs e)
