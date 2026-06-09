@@ -10,11 +10,13 @@ namespace PasswordManager.Services
 {
     public interface IAccountInfoService
     {
+        void SetDB(long userId, string masterKey);
         void Create(AccountInfo accountInfo);
+        void Create(AccountInfo accountInfo, ServiceInfo serviceInfo);
         void Delete(long id);
-        void Delete(string url);
         void Update(AccountInfo accountInfo);
         List<AccountInfo> GetAll();
         AccountInfo? Get(long id);
+        List<AccountInfo> GetByServiceInfoId(long serviceInfoId);
     }
 }

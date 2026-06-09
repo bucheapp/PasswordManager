@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace PasswordManager.Models
 {
-    public class Cache
+    public class ServiceInfo
     {
         public long Id { get; set; }
-        public string Url { get; set; } = "";
-        public string ImageUrl { get; set; } = "";
         public string Title { get; set; } = "";
-        public Cache() {}
+        public string? Url { get; set; }
+        public long DisplayIndex { get; set; }
+        public ServiceInfo() { }
     }
 }

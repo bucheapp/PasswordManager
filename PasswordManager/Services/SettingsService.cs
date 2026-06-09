@@ -12,8 +12,8 @@ namespace PasswordManager.Services
 {
     public class SettingsService : ISettingsService
     {
-        private const string WindowSettingsFileName = "windowsettings.json";
-        private const string AppSettingsFileName = "appsettings.json";
+        private const string WindowSettingsFileName = "settings/window.json";
+        private const string AppSettingsFileName = "settings/app.json";
         public void SaveWindowSettings(WindowSettings windowSettings)
         {
             string json = JsonSerializer.Serialize(windowSettings);
@@ -25,33 +25,53 @@ namespace PasswordManager.Services
             string json = JsonSerializer.Serialize(appSettings);
             File.WriteAllText(AppSettingsFileName, json);
         }
-        public WindowSettings? LoadWindowSettings()
+        public WindowSettings LoadWindowSettings()
         {
+            WindowSettings defaultWindowSettings = new WindowSettings()
+            {
+                Width = 800,
+                Height = 450,
+                Left = null,
+                Top = null,
+                WindowState = WindowState.Normal
+            };
+
             if (File.Exists(WindowSettingsFileName))
             {
                 string json = File.ReadAllText(WindowSettingsFileName);
-                return JsonSerializer.Deserialize<WindowSettings>(json);
+                WindowSettings? windowSettings = JsonSerializer.Deserialize<WindowSettings>(json);
+                if(windowSettings == null)
+                {
+                    return defaultWindowSettings;
+                }
+                return windowSettings;
             }
             else
             {
-                WindowSettings windowSettings = new WindowSettings();
-                windowSettings.Width = 800;
-                windowSettings.Height = 450;
-                windowSettings.Left = null;
-                windowSettings.Top = null;
-                windowSettings.WindowState = WindowState.Normal;
-                return windowSettings;
+                return defaultWindowSettings;
             }
         }
-        public AppSettings? LoadAppSettings()
+        public AppSettings LoadAppSettings()
         {
+            AppSettings defaultAppSettings = new AppSettings()
+            {
+                DefaultUserId = 1
+            };
+
             if (File.Exists(AppSettingsFileName))
             {
                 string json = File.ReadAllText(AppSettingsFileName);
-                return JsonSerializer.Deserialize<AppSettings>(json);
+                AppSettings? appSettings = JsonSerializer.Deserialize<AppSettings>(json);
+                if (appSettings == null)
+                {
+                    SaveAppSettings(defaultAppSettings);
+                    return defaultAppSettings;
+                }
+                return appSettings;
             }
 
-            return null;
+            SaveAppSettings(defaultAppSettings);
+            return defaultAppSettings;
         }
     }
 }

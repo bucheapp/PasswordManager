@@ -10,12 +10,12 @@ namespace PasswordManager.Repositories
     public interface IAccountInfoRepository
     {
         IEnumerable<AccountInfo> GetAll();
-        IEnumerable<AccountInfo> GetByUrl(string url);
         AccountInfo? GetById(long id);
         AccountInfo? GetByName(string name);
+        AccountInfo? GetByNameAndServiceInfoId(string name, long serviceInfoId);
+        IEnumerable<AccountInfo> GetByServiceInfoId(long serviceInfoId);
         void Create(AccountInfo accountInfo);
         void DeleteById(long id);
-        void DeleteByUrl(string url);
         void Update(AccountInfo accountInfo);
     }
 }

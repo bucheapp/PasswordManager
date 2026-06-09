@@ -1,7 +1,7 @@
-﻿using System;
+﻿using PasswordManager.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.RightsManagement;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,25 +12,22 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.Xml.Serialization;
-using PasswordManager.Models;
 
 namespace PasswordManager
 {
     /// <summary>
-    /// CreateUserWindow.xaml の相互作用ロジック
+    /// UpdateAccountInfoWindow.xaml の相互作用ロジック
     /// </summary>
-    public partial class CreateUserWindow : Window
+    public partial class UpdateAccountInfoWindow : Window
     {
-        public string UserName => NameBox.Text;
-        public string Password => PasswordBox.Password;
+        public string NewAccountName => NameBox.Text;
+        public string NewAccountPassword => PasswordBox.Password;
         public string ConfirmPassword => ConfirmPasswordBox.Password;
-        public User? CreatedUser;
-        public CreateUserWindow(string prevUserName,string prevPassword)
+        public UpdateAccountInfoWindow(string name,string password)
         {
             InitializeComponent();
-            NameBox.Text = prevUserName;
-            PasswordBox.Password = prevPassword;
+            NameBox.Text = name;
+            PasswordBox.Password = password;
         }
 
         private void Ok_Click(object sender, RoutedEventArgs e)

@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using PasswordManager.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Policy;
 using System.Text;
@@ -13,33 +14,49 @@ namespace PasswordManager.Repositories
     public class AccountInfoRepository : IAccountInfoRepository
     {
         private readonly string _connectionString;
-        public AccountInfoRepository(string connectionString)
+        private readonly string _masterKey;
+        public AccountInfoRepository(string connectionString,string masterKey)
         {
             _connectionString = connectionString;
+            _masterKey = masterKey;
+
+            using var conn = CreateConnection();
+
+            string sql = @"
+                CREATE TABLE IF NOT EXISTS AccountInfos (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL,
+                    Password TEXT NOT NULL,
+                    AuthType TEXT NOT NULL,
+                    DisplayIndex INTEGER NOT NULL DEFAULT 0,
+                    ServiceInfoId INTEGER NOT NULL
+                );";
+
+            using var cmd = new SqliteCommand(sql, conn);
+            cmd.ExecuteNonQuery();
         }
 
-        private SqliteConnection CreateConnection() => new SqliteConnection(_connectionString);
+        private SqliteConnection CreateConnection()
+        {
+            var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+
+            conn.Execute($"PRAGMA key = '{_masterKey}';");
+
+            return conn;
+        }
 
         public IEnumerable<AccountInfo> GetAll()
         {
             using var conn = CreateConnection();
-            return conn.Query<AccountInfo>("SELECT Id, Name FROM AccountInfos");
-        }
-        public IEnumerable<AccountInfo> GetByUrl(string url)
-        {
-            using var conn = CreateConnection();
-
-            return conn.Query<AccountInfo>(
-                "SELECT Id, Name FROM AccountInfos WHERE Url = @Url",
-                new { Url = url }
-            );
+            return conn.Query<AccountInfo>("SELECT * FROM AccountInfos");
         }
         public AccountInfo? GetById(long id)
         {
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<AccountInfo > (
-                "SELECT Id, Name FROM AccountInfos WHERE Id = @Id",
+                "SELECT * FROM AccountInfos WHERE Id = @Id",
                 new { Id = id }
             );
         }
@@ -48,16 +65,39 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<AccountInfo>(
-                "SELECT Id, Name FROM AccountInfos WHERE Name = @Name",
+                "SELECT * FROM AccountInfos WHERE Name = @Name",
                 new { Name = name }
+            );
+        }
+        public AccountInfo? GetByNameAndServiceInfoId(string name, long serviceInfoId)
+        {
+            using var conn = CreateConnection();
+
+            return conn.QueryFirstOrDefault<AccountInfo>(
+                @"SELECT * FROM AccountInfos WHERE Name = @Name
+                AND ServiceInfoId = @ServiceInfoId",
+                new
+                {
+                    Name = name,
+                    ServiceInfoId = serviceInfoId
+                });
+        }
+        public IEnumerable<AccountInfo> GetByServiceInfoId(long serviceInfoId)
+        {
+            using var conn = CreateConnection();
+            return conn.Query<AccountInfo>(
+                "SELECT * FROM AccountInfos WHERE ServiceInfoId = @ServiceInfoId",
+                new { ServiceInfoId = serviceInfoId }
             );
         }
         public void Create(AccountInfo accountInfo)
         {
             using var conn = CreateConnection();
 
-            conn.Execute(
-                @"INSERT INTO AccountInfos (Url, Name,Password,AuthType, [Index]) VALUES (@Url, @Name,@Password,@AuthType, @Index)",
+            accountInfo.Id = (long)conn.QuerySingle<long>(
+                    @"INSERT INTO AccountInfos (Name, Password, AuthType, DisplayIndex, ServiceInfoId)
+                    VALUES (@Name, @Password, @AuthType, @DisplayIndex, @ServiceInfoId);
+                    SELECT last_insert_rowid();",
                 accountInfo
             );
         }
@@ -70,25 +110,15 @@ namespace PasswordManager.Repositories
                 new { Id = id }
             );
         }
-        public void DeleteByUrl(string url)
-        {
-            using var conn = CreateConnection();
-
-            conn.Execute(
-                "DELETE FROM AccountInfos WHERE Url = @Url",
-                new { Url = url }
-            );
-        }
         public void Update(AccountInfo accountInfo)
         {
             using var conn = CreateConnection();
 
             conn.Execute(
                 @"UPDATE AccountInfos
-                SET Url = @Url,Name = @Name,Password = @Password,AuthType = @AuthType,[Index] = @Index WHERE Id = @Id",
+                SET Name = @Name, Password = @Password, AuthType = @AuthType, DisplayIndex = @DisplayIndex, ServiceInfoId = @ServiceInfoId WHERE Id = @Id",
                 accountInfo
             );
         }
-
     }
 }

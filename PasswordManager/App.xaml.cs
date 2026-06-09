@@ -27,47 +27,39 @@ namespace PasswordManager
                 Directory.CreateDirectory("db");
             }
 
+            if (!Directory.Exists("settings"))
+            {
+                Directory.CreateDirectory("settings");
+            }
+
             // SQL
-            string connectionAccountInfoString = "Data Source=db/accountinfo.db;";
             string connectionCacheString = "Data Source=db/cache.db;";
             string connectionUserString = "Data Source=db/user.db;";
 
             // Repository
 
-            services.AddSingleton<IAccountInfoRepository>(_ => new AccountInfoRepository(connectionAccountInfoString));
+            services.AddSingleton<IAccountInfoRepositoryFactory>(_ => new AccountInfoRepositoryFactory());
+            services.AddSingleton<IServiceInfoRepositoryFactory>(_ => new ServiceInfoRepositoryFactory());
             services.AddSingleton<ICacheRepository>(_ => new CacheRepository(connectionCacheString));
             services.AddSingleton<IUserRepository>(_ => new UserRepository(connectionUserString));
 
             // Service
             services.AddSingleton<IAccountInfoService, AccountInfoService>();
+            services.AddSingleton<IServiceInfoService, ServiceInfoService>();
             services.AddSingleton<ISettingsService, SettingsService>();
             services.AddSingleton<ICacheService, CacheService>();
             services.AddSingleton<IUserService, UserService>();
+            services.AddSingleton<IWindowService, WindowService>();
+            services.AddSingleton<IServiceInfoToTextService, ServiceInfoToTextService>();
             //services.AddSingleton<IWebSiteFetchService, WebSiteFetchService>();
 
             // Window
             services.AddTransient<MainWindow>();
+            services.AddTransient<PasswordPage>();
 
             Services = services.BuildServiceProvider();
 
             var mainWindow = Services.GetRequiredService<MainWindow>();
-
-            var settings = new SettingsService().LoadWindowSettings();
-
-            if (settings == null)
-            {
-                return;
-            }
-
-            mainWindow.WindowStartupLocation = WindowStartupLocation.Manual;
-
-            mainWindow.Width = settings.Width;
-            mainWindow.Height = settings.Height;
-            mainWindow.Left = settings.Left ?? mainWindow.Left;
-            mainWindow.Top = settings.Top ?? mainWindow.Top;
-            mainWindow.WindowState = settings.WindowState;
-
-            mainWindow.Show();
 
             base.OnStartup(e);
         }

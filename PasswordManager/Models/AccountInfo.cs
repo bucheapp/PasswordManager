@@ -15,18 +15,11 @@ namespace PasswordManager.Models
     public class AccountInfo
     {
         public long Id { get; set; }
-        public string? Url { get; set; }
-        public string Name { get; set; }
-        public string Password { get; set; }
+        public string Name { get; set; } = "";
+        public string Password { get; set; } = "";
         public AuthType AuthType { get; set; }
-        public int Index { get; set; }
-
-        public AccountInfo(string? url, string name, string password, AuthType authType)
-        {
-            Url = url;
-            Name = name;
-            Password = password;
-            AuthType = authType;
-        }
+        public long DisplayIndex { get; set; }
+        public long ServiceInfoId { get; set; }
+        public AccountInfo() {}
     }
 }

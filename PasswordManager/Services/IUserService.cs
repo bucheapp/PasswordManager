@@ -14,5 +14,6 @@ namespace PasswordManager.Services
         void Update(User user, string password);
         List<User> GetAll();
         User? Get(string name);
+        User? Get(long id);
     }
 }

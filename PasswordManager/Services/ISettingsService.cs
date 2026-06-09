@@ -6,9 +6,9 @@ namespace PasswordManager.Services
     public interface ISettingsService
     {
         void SaveWindowSettings(WindowSettings windowSettings);
-        WindowSettings? LoadWindowSettings();
+        WindowSettings LoadWindowSettings();
         void SaveAppSettings(AppSettings appSettings);
-        AppSettings? LoadAppSettings();
+        AppSettings LoadAppSettings();
     }
 
     public class AppSettings
