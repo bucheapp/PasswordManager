@@ -51,7 +51,7 @@ namespace PasswordManager
             services.AddSingleton<IUserService, UserService>();
             services.AddSingleton<IWindowService, WindowService>();
             services.AddSingleton<IServiceInfoToTextService, ServiceInfoToTextService>();
-            //services.AddSingleton<IWebSiteFetchService, WebSiteFetchService>();
+            services.AddSingleton<IWebSiteFetchService, WebSiteFetchService>();
 
             // Window
             services.AddTransient<MainWindow>();

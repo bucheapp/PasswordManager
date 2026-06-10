@@ -5,8 +5,10 @@ using PasswordManager.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Mail;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Policy;
 using System.Text;
@@ -21,7 +23,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.IO;
 
 namespace PasswordManager
 {
@@ -35,12 +36,16 @@ namespace PasswordManager
         private readonly IUserService _userService;
         private readonly IWindowService _windowService;
         private readonly IServiceInfoToTextService _serviceInfoToTextService;
+        private readonly IWebSiteFetchService _webSiteFetchService;
+        private readonly ICacheService _cacheService;
         public PasswordPage(
             IServiceInfoService serviceInfoService,
             IAccountInfoService accountInfoService,
             IUserService userService,
             IWindowService windowService,
-            IServiceInfoToTextService serviceInfoToTextService
+            IServiceInfoToTextService serviceInfoToTextService,
+            IWebSiteFetchService webSiteFetchService,
+            ICacheService cacheService
             )
         {
             InitializeComponent();
@@ -49,6 +54,8 @@ namespace PasswordManager
             _userService = userService;
             _windowService = windowService;
             _serviceInfoToTextService = serviceInfoToTextService;
+            _webSiteFetchService = webSiteFetchService;
+            _cacheService = cacheService;
         }
 
         public void Init()
@@ -64,6 +71,10 @@ namespace PasswordManager
             {
                 var serviceInfoParts = CreateServiceInfoParts(serviceInfo.Id,serviceInfo.Title);
                 ServicePanel.Children.Add(serviceInfoParts);
+                if (serviceInfo.Url != null)
+                {
+                    AddFavicon(serviceInfoParts, serviceInfo.Url);
+                }
                 List<AccountInfo> accountInfos = _accountInfoService.GetByServiceInfoId(serviceInfo.Id);
                 foreach (var accountInfo in accountInfos)
                 {
@@ -140,6 +151,12 @@ namespace PasswordManager
                     {
                         var serviceInfoParts = CreateServiceInfoParts(serviceInfoId,serviceInfo.Title);
                         ServicePanel.Children.Add(serviceInfoParts);
+
+                        if(serviceInfo.Url != null)
+                        {
+                            AddFavicon(serviceInfoParts,url);
+                        }
+
                         InsertAccountInfoParts(serviceInfoParts,accountInfo.Id, accountInfo.Name, accountInfo.AuthType);
                         EmptyMessage.Visibility = Visibility.Collapsed;
                     }
@@ -157,6 +174,54 @@ namespace PasswordManager
                         MessageBoxImage.Error);
 
                     ShowCreateServiceInfoWindow(title,url,name,password);
+                }
+            }
+        }
+        public void AddFavicon(Border serviceInfoParts,string url)
+        {
+            var expander = serviceInfoParts.Child as Expander;
+            var headerPanel = expander?.Header as StackPanel;
+
+            if (headerPanel != null)
+            {
+                Cache? cache = _cacheService.Load(url);
+                if (cache == null)
+                {
+                    _webSiteFetchService.Fetch(url)
+                    .ContinueWith(task =>
+                    {
+                        cache = _cacheService.Add(task.Result);
+
+                        Dispatcher.Invoke(() =>
+                        {
+                            var image = new Image
+                            {
+                                Width = 19,
+                                Height = 19,
+                                Margin = new Thickness(0, 0, 5, 0),
+                                Source = new BitmapImage(
+                                    new Uri("pack://siteoforigin:,,,/favicon/" + cache?.ImageUrl ?? ""))
+                            };
+
+                            headerPanel.Children.Insert(0, image);
+                        });
+                    });
+                }
+                else
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        var image = new Image
+                        {
+                            Width = 19,
+                            Height = 19,
+                            Margin = new Thickness(0, 0, 5, 0),
+                            Source = new BitmapImage(
+                                new Uri("pack://siteoforigin:,,,/favicon/" + cache.ImageUrl))
+                        };
+
+                        headerPanel.Children.Insert(0, image);
+                    });
                 }
             }
         }
@@ -240,11 +305,25 @@ namespace PasswordManager
 
             var expander = new Expander
             {
-                Header = title,
                 IsExpanded = false,
                 Padding = new Thickness(10),
                 Tag = id
             };
+
+            var headerPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal
+            };
+
+            var textBlock = new TextBlock
+            {
+                Text = title,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            headerPanel.Children.Add(textBlock);
+
+            expander.Header = headerPanel;
 
             var stackPanel = new StackPanel
             {
@@ -273,22 +352,20 @@ namespace PasswordManager
                     Property = UIElement.IsMouseOverProperty,
                     Value = true
                 };
-                hoverTrigger.Setters.Add(
-                    new Setter(
-                        Border.BackgroundProperty,
-                        new SolidColorBrush((Color)ColorConverter.ConvertFromString(hover)),
-                        "border"));
+                hoverTrigger.Setters.Add(new Setter(
+                    Border.BackgroundProperty,
+                    new SolidColorBrush((Color)ColorConverter.ConvertFromString(hover)),
+                    "border"));
 
                 var pressedTrigger = new Trigger
                 {
                     Property = Button.IsPressedProperty,
                     Value = true
                 };
-                pressedTrigger.Setters.Add(
-                    new Setter(
-                        Border.BackgroundProperty,
-                        new SolidColorBrush((Color)ColorConverter.ConvertFromString(pressed)),
-                        "border"));
+                pressedTrigger.Setters.Add(new Setter(
+                    Border.BackgroundProperty,
+                    new SolidColorBrush((Color)ColorConverter.ConvertFromString(pressed)),
+                    "border"));
 
                 template.Triggers.Add(hoverTrigger);
                 template.Triggers.Add(pressedTrigger);
@@ -405,7 +482,45 @@ namespace PasswordManager
                     }
 
                     _serviceInfoService.Update(newServiceInfo);
-                    expander.Header = newTitle;
+
+                    if (expander.Header is StackPanel headerPanel)
+                    {
+                        if(newUrl != null)
+                        {
+                            if (headerPanel.Children[0] is Image image)
+                            {
+                                Cache? cache = _cacheService.Load(newUrl);
+                                if (cache == null)
+                                {
+                                    _webSiteFetchService.Fetch(newUrl)
+                                    .ContinueWith(task =>
+                                    {
+                                        cache = _cacheService.Add(task.Result);
+                                        Dispatcher.Invoke(() =>
+                                            {
+                                                image.Source = new BitmapImage(new Uri("pack://siteoforigin:,,,/favicon/" + cache?.ImageUrl));
+                                            });
+                                    });
+                                } else
+                                {
+                                    Dispatcher.Invoke(() =>
+                                    {
+                                        image.Source = new BitmapImage(new Uri("pack://siteoforigin:,,,/favicon/" + cache.ImageUrl));
+                                        headerPanel.Children.Insert(0, image);
+                                    });
+                                }
+                            } else
+                            {
+                                AddFavicon((Border)expander.Parent, newUrl);
+                            }
+                        }
+                        foreach (var child in  headerPanel.Children) {
+                            if(child is TextBlock textBlock)
+                            {
+                                textBlock.Text = newTitle;
+                            }
+                        }
+                    }
                 }
                 catch (Exception e2) when (e2 is ArgumentException || e2 is InvalidOperationException)
                 {
@@ -731,6 +846,9 @@ namespace PasswordManager
         }
         public void CreateUser_Click(object sender, RoutedEventArgs e)
         {
+        }
+        public void ShowCreateUserWindow(User? prevCurrentUser)
+        {
             var createUserWindow = _windowService.ShowCreateUserWindow("", "");
             if (createUserWindow == null)
             {
@@ -742,13 +860,33 @@ namespace PasswordManager
 
             if (currentUser != null && password != null)
             {
-                SetNewPage(currentUser,password);
+                try
+                {
+                    _accountInfoService.SetDB(currentUser.Id, password);
+                    _serviceInfoService.SetDB(currentUser.Id, password);
+                }
+                catch (SqliteException e2)
+                {
+                    MessageBox.Show(
+                        e2.Message,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    ShowCreateUserWindow(currentUser);
+                    return;
+                }
+                SetNewPage(currentUser, password);
             }
         }
         public void SelectUser_Click(object sender, RoutedEventArgs e)
         {
             List<User> users = _userService.GetAll();
-            var selectUserWindow = _windowService.ShowSelectUserWindow(users);
+            ShowSelectUserWindow(users,null);
+        }
+        private void ShowSelectUserWindow(List<User> users,User? prevCurrentUser)
+        {
+            var selectUserWindow = _windowService.ShowSelectUserWindow(users, prevCurrentUser);
             if (selectUserWindow == null)
             {
                 return;
@@ -759,27 +897,27 @@ namespace PasswordManager
 
             if (currentUser != null && password != null)
             {
-                SetNewPage(currentUser,password);
+                try
+                {
+                    _accountInfoService.SetDB(currentUser.Id, password);
+                    _serviceInfoService.SetDB(currentUser.Id, password);
+                }
+                catch (SqliteException e2)
+                {
+                    MessageBox.Show(
+                        e2.Message,
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    ShowSelectUserWindow(users,currentUser);
+                    return;
+                }
+                SetNewPage(currentUser, password);
             }
         }
         private void SetNewPage(User currentUser,string password)
         {
-            try
-            {
-                _accountInfoService.SetDB(currentUser.Id, password);
-                _serviceInfoService.SetDB(currentUser.Id, password);
-            }
-            catch (SqliteException e2)
-            {
-                MessageBox.Show(
-                    e2.Message,
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                return;
-            }
-
             Window.GetWindow(this).Title = $"Password Manager - {currentUser?.Name}";
             ServicePanel.Children.Clear();
             Init();

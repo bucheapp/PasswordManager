@@ -12,6 +12,7 @@ namespace PasswordManager.Models
         public string Title { get; set; } = "";
         public string? Url { get; set; }
         public long DisplayIndex { get; set; }
+        public DateTime CreatedAt { get; set; }
         public ServiceInfo() { }
     }
 }

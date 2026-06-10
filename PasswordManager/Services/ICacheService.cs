@@ -10,7 +10,7 @@ namespace PasswordManager.Services
 {
     public interface ICacheService
     {
-        public void Add(WebsiteData websiteData);
+        public Cache? Add(WebsiteData websiteData);
         public Cache? Load(string url);
         public void Clear();
     }

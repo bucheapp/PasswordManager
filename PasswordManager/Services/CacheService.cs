@@ -2,22 +2,25 @@
 using PasswordManager.Repositories;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
-using System.IO;
+using System.Windows.Shapes;
 
 namespace PasswordManager.Services
 {
     public class CacheService : ICacheService
     {
         ICacheRepository _cacheRepository;
+        IWebSiteFetchService _webSiteFetchService;
         private const string FaviconDirectoryPath = "favicon";
-        public CacheService(ICacheRepository cacheRepository) {
+        public CacheService(ICacheRepository cacheRepository,IWebSiteFetchService webSiteFetchService) {
             _cacheRepository = cacheRepository;
+            _webSiteFetchService = webSiteFetchService;
         }
-        public void Add(WebsiteData websiteData)
+        public Cache? Add(WebsiteData websiteData)
         {
             string url = websiteData.Url;
 
@@ -31,24 +34,28 @@ namespace PasswordManager.Services
 
             if (result != null)
             {
-                string imageUrl = OutputImage(websiteData.Image);
+                string imageUrl = OutputImage(websiteData.ImageBytes);
                 Cache cache = new()
                 {
                     Url = result,
                     ImageUrl = imageUrl ?? throw new InvalidOperationException("Failed to generate image URL."),
-                    Title = websiteData.Title
+                    NextUpdateAt = DateTime.Now.AddDays(10)
                 };
                 _cacheRepository.Create(cache);
+
+                return cache;
             }
+
+            return null;
         }
-
-        private string OutputImage(BitmapImage image)
+        private string OutputImage(byte[] imageBytes)
         {
-            BitmapEncoder encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(image));
-
             string? path = null;
             int cnt = 0;
+
+            if(!File.Exists(FaviconDirectoryPath)) {
+                Directory.CreateDirectory(FaviconDirectoryPath);
+            }
 
             while(true)
             {
@@ -67,15 +74,34 @@ namespace PasswordManager.Services
                 }
             }
 
-            using var stream = new FileStream(FaviconDirectoryPath + "/" + path, FileMode.Create);
-            encoder.Save(stream);
+            File.WriteAllBytes(FaviconDirectoryPath + "/" + path,imageBytes);
 
             return path;
         }
 
         public Cache? Load(string url)
         {
-            return _cacheRepository.GetByUrl(url);
+            Uri uri = new(url);
+            string result = uri.GetLeftPart(UriPartial.Authority);
+            Cache? cache = _cacheRepository.GetByUrl(result);
+            if (cache != null)
+            {
+                if (cache.NextUpdateAt < DateTime.Now)
+                {
+                    _webSiteFetchService.Fetch(result)
+                        .ContinueWith(task =>
+                        {
+                            if (task.IsCompletedSuccessfully)
+                            {
+                                WebsiteData websiteData = task.Result;
+                                File.WriteAllBytes(FaviconDirectoryPath + "/" + cache.ImageUrl, websiteData.ImageBytes);
+                            }
+                        });
+
+                }
+            }
+
+            return cache;
         }
         public void Clear()
         {

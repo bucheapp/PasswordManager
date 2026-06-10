@@ -11,6 +11,7 @@ namespace PasswordManager.Models
         public long Id { get; set; }
         public string Name { get; set; } = "";
         public long DisplayIndex { get; set; }
+        public DateTime CreatedAt { get; set; }
         public User() {}
     }
 }

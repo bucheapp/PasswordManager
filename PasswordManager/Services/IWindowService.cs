@@ -9,7 +9,7 @@ namespace PasswordManager.Services
 {
     public interface IWindowService
     {
-        SelectUserWindow? ShowSelectUserWindow(List<User> users);
+        SelectUserWindow? ShowSelectUserWindow(List<User> users, User? prevSelectedUser);
         CreateUserWindow? ShowCreateUserWindow(string prevName, string prevPassword);
     }
 }

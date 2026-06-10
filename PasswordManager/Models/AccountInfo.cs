@@ -20,6 +20,7 @@ namespace PasswordManager.Models
         public AuthType AuthType { get; set; }
         public long DisplayIndex { get; set; }
         public long ServiceInfoId { get; set; }
+        public DateTime CreatedAt { get; set; }
         public AccountInfo() {}
     }
 }

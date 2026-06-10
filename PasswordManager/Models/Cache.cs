@@ -12,6 +12,8 @@ namespace PasswordManager.Models
         public string Url { get; set; } = "";
         public string ImageUrl { get; set; } = "";
         public string Title { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+        public DateTime NextUpdateAt { get; set; }
         public Cache() {}
     }
 }

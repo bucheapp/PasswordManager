@@ -13,5 +13,6 @@ namespace PasswordManager.Repositories
         Cache? GetByUrl(string url);
         void Create(Cache cache);
         void DeleteAll();
+        void Update(Cache cache);
     }
 }

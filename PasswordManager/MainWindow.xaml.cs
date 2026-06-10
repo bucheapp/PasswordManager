@@ -66,14 +66,14 @@ namespace PasswordManager
             Top = windowSettings.Top ?? Top;
             WindowState = windowSettings.WindowState;
 
-            Init();
+            Init(null);
 
             Closing += MainWindow_Closing;
 
             Show();
         }
 
-        private void Init()
+        private void Init(User? prevSelectedUser)
         {
             List<User> users = _userService.GetAll();
             string? password = null;
@@ -93,7 +93,7 @@ namespace PasswordManager
                 }
             } else
             {
-                var selectUserWindow = _windowService.ShowSelectUserWindow(users);
+                var selectUserWindow = _windowService.ShowSelectUserWindow(users,prevSelectedUser);
                 if (selectUserWindow != null)
                 {
                     password = selectUserWindow.Password;
@@ -122,7 +122,7 @@ namespace PasswordManager
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
 
-                    Init();
+                    Init(selectedUser);
 
                     return;
                 }

@@ -19,7 +19,7 @@ namespace PasswordManager.Services
             _userService = userService;
         }
 
-        public SelectUserWindow? ShowSelectUserWindow(List<Models.User> users)
+        public SelectUserWindow? ShowSelectUserWindow(List<Models.User> users,User? prevSelectedUser)
         {
             AppSettings appSettings = _settingsService.LoadAppSettings();
 
@@ -33,17 +33,17 @@ namespace PasswordManager.Services
 
                 _settingsService.SaveAppSettings(newAppSettings);
 
-                return ShowSelectUserWindow(users);
+                defaultUser = users[0];
             }
 
-            var window = new SelectUserWindow(users, defaultUser);
+            var window = new SelectUserWindow(users, defaultUser,prevSelectedUser);
 
             if (window.ShowDialog() == true)
             {
                 if (string.IsNullOrEmpty(window.Password))
                 {
                     MessageBox.Show("Please enter your password.");
-                    return ShowSelectUserWindow(users);
+                    return ShowSelectUserWindow(users,window.SelectedUser);
                 }
                 return window;
             }

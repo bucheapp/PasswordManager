@@ -1,6 +1,7 @@
 ﻿using PasswordManager.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,26 +24,21 @@ namespace PasswordManager
         private readonly List<User> _users;
         public string Password => PasswordBox.Password;
         public User SelectedUser { get; set; }
-        public SelectUserWindow(List<User> users,User defaultUser)
+        public SelectUserWindow(List<User> users,User defaultUser,User? prevSelectedUser)
         {
             InitializeComponent();
             _users = users;
 
             UserComboBox.ItemsSource = _users;
-            SelectedUser = defaultUser;
+            SelectedUser = prevSelectedUser ?? defaultUser;
 
             if (_users.Count > 0)
             {
-                UserComboBox.SelectedIndex = 0;
+                var targetId = prevSelectedUser?.Id ?? defaultUser.Id;
+                UserComboBox.SelectedItem = _users.FirstOrDefault(u => u.Id == targetId);
             } else
             {
-                _users.ForEach(u =>
-                {
-                    if (u.Id == defaultUser.Id)
-                    {
-                        UserComboBox.SelectedItem = u;
-                    }
-                });
+                UserComboBox.SelectedIndex = 0;
             }
         }
 

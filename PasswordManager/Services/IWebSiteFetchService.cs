@@ -10,20 +10,17 @@ namespace PasswordManager.Services
 {
     public interface IWebSiteFetchService
     {
-        WebsiteData Fetch(string url);
+        Task<WebsiteData> Fetch(string url);
     }
 
     public class WebsiteData
     {
         public string Url { get; set; }
-        public BitmapImage Image { get; set; }
-        public string Title { get; set; }
-
-        public WebsiteData(string url,BitmapImage image,string title)
+        public byte[] ImageBytes { get; set; }
+        public WebsiteData(string url,byte[] imageBytes)
         {
             Url = url;
-            Image = image;
-            Title = title;
+            ImageBytes = imageBytes;
         }
     }
 }
