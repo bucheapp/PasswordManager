@@ -21,6 +21,7 @@ namespace PasswordManager.Models
         public long DisplayIndex { get; set; }
         public long ServiceInfoId { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? DeletedAt { get; set; }
         public AccountInfo() {}
     }
 }

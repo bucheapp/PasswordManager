@@ -25,7 +25,9 @@ namespace PasswordManager.Repositories
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Title TEXT NOT NULL,
                     Url TEXT,
-                    DisplayIndex INTEGER NOT NULL DEFAULT 0
+                    DisplayIndex INTEGER NOT NULL DEFAULT 0,
+                    CreatedAt TEXT NOT NULL,
+                    DeletedAt TEXT
                 );";
 
             using var cmd = new SqliteCommand(sql, conn);
@@ -48,6 +50,7 @@ namespace PasswordManager.Repositories
 
             return conn.Query<ServiceInfo>(
                 @"SELECT * FROM ServiceInfos
+                WHERE DeletedAt IS NULL
                 ORDER BY DisplayIndex");
         }
 
@@ -56,7 +59,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
             return conn.QueryFirstOrDefault<ServiceInfo>(
                 @"SELECT * FROM ServiceInfos
-                WHERE Id = @Id",
+                WHERE Id = @Id AND DeletedAt IS NULL",
                 new { Id = id }
             );
         }
@@ -66,7 +69,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
             return conn.QueryFirstOrDefault<ServiceInfo>(
                 @"SELECT * FROM ServiceInfos
-                WHERE Title = @Title",
+                WHERE Title = @Title AND DeletedAt IS NULL",
                 new { Title = title }
             );
         }
@@ -76,17 +79,18 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
             return conn.QueryFirstOrDefault<ServiceInfo>(
                 @"SELECT * FROM ServiceInfos
-                WHERE Url = @Url",
+                WHERE Url = @Url AND DeletedAt IS NULL",
                 new { Url = url }
             );
         }
 
         public void Create(ServiceInfo serviceInfo)
         {
+            serviceInfo.CreatedAt = DateTime.UtcNow;
             using var conn = CreateConnection();
             serviceInfo.Id = (long)conn.QuerySingle<long>(
-                @"INSERT INTO ServiceInfos (Title, Url, DisplayIndex)
-                    VALUES (@Title, @Url, @DisplayIndex);
+                @"INSERT INTO ServiceInfos (Title, Url, DisplayIndex, CreatedAt, DeletedAt)
+                    VALUES (@Title, @Url, @DisplayIndex, @CreatedAt, @DeletedAt);
                     SELECT last_insert_rowid();",
                 serviceInfo
             );
@@ -106,7 +110,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
             conn.Execute(
                 @"UPDATE ServiceInfos
-                SET Title = @Title, Url = @Url, DisplayIndex = @DisplayIndex
+                SET Title = @Title, Url = @Url, DisplayIndex = @DisplayIndex, CreatedAt = @CreatedAt, DeletedAt = @DeletedAt
                 WHERE Id = @Id",
                 serviceInfo
             );

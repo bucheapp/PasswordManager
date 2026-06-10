@@ -25,7 +25,9 @@ namespace PasswordManager.Repositories
                 CREATE TABLE IF NOT EXISTS Users (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Name TEXT NOT NULL,
-                    DisplayIndex INTEGER NOT NULL DEFAULT 0
+                    DisplayIndex INTEGER NOT NULL DEFAULT 0,
+                    CreatedAt TEXT NOT NULL,
+                    DeletedAt TEXT
                 );";
 
             using var cmd = new SqliteCommand(sql, conn);
@@ -37,14 +39,14 @@ namespace PasswordManager.Repositories
         public IEnumerable<User> GetAll()
         {
             using var conn = CreateConnection();
-            return conn.Query<User>("SELECT * FROM Users");
+            return conn.Query<User>("SELECT * FROM Users WHERE DeletedAt IS NULL");
         }
         public User? GetById(long id)
         {
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<User>(
-                "SELECT * FROM Users WHERE Id = @Id",
+                "SELECT * FROM Users WHERE Id = @Id AND DeletedAt IS NULL",
                 new { Id = id }
             );
         }
@@ -53,17 +55,18 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<User>(
-                "SELECT * FROM Users WHERE Name = @Name",
+                "SELECT * FROM Users WHERE Name = @Name AND DeletedAt IS NULL",
                 new { Name = name }
             );
         }
         public void Create(User user)
         {
+            user.CreatedAt = DateTime.UtcNow;
             using var conn = CreateConnection();
 
             user.Id = (long)conn.QuerySingle<long>(
-                @"INSERT INTO Users (Name, DisplayIndex)
-                  VALUES (@Name, @DisplayIndex);
+                @"INSERT INTO Users (Name, DisplayIndex, CreatedAt, DeletedAt)
+                  VALUES (@Name, @DisplayIndex, @CreatedAt, @DeletedAt);
                   SELECT last_insert_rowid();",
                 user
             );
@@ -92,7 +95,7 @@ namespace PasswordManager.Repositories
 
             conn.Execute(
                 @"UPDATE Users
-                SET Name = @Name, DisplayIndex = @DisplayIndex WHERE Id = @Id",
+                SET Name = @Name, DisplayIndex = @DisplayIndex, CreatedAt = @CreatedAt, DeletedAt = @DeletedAt WHERE Id = @Id",
                 user
             );
         }

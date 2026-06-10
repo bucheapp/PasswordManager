@@ -53,7 +53,9 @@ namespace PasswordManager.Services
         }
         public void Delete(long id)
         {
-            Repo.DeleteById(id);
+            ServiceInfo serviceInfo = Repo.GetById(id) ?? throw new InvalidOperationException("Service not found.");
+            serviceInfo.DeletedAt = DateTime.UtcNow;
+            Repo.Update(serviceInfo);
         }
         public void Update(ServiceInfo serviceInfo)
         {

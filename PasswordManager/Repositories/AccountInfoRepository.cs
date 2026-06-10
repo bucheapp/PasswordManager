@@ -29,7 +29,9 @@ namespace PasswordManager.Repositories
                     Password TEXT NOT NULL,
                     AuthType TEXT NOT NULL,
                     DisplayIndex INTEGER NOT NULL DEFAULT 0,
-                    ServiceInfoId INTEGER NOT NULL
+                    ServiceInfoId INTEGER NOT NULL,
+                    CreatedAt TEXT NOT NULL,
+                    DeletedAt TEXT
                 );";
 
             using var cmd = new SqliteCommand(sql, conn);
@@ -49,7 +51,7 @@ namespace PasswordManager.Repositories
         public IEnumerable<AccountInfo> GetAll()
         {
             using var conn = CreateConnection();
-            return conn.Query<AccountInfo>("SELECT * FROM AccountInfos");
+            return conn.Query<AccountInfo>("SELECT * FROM AccountInfos WHERE DeletedAt IS NULL");
         }
         public AccountInfo? GetById(long id)
         {
@@ -65,7 +67,7 @@ namespace PasswordManager.Repositories
             using var conn = CreateConnection();
 
             return conn.QueryFirstOrDefault<AccountInfo>(
-                "SELECT * FROM AccountInfos WHERE Name = @Name",
+                "SELECT * FROM AccountInfos WHERE Name = @Name AND DeletedAt IS NULL",
                 new { Name = name }
             );
         }
@@ -75,7 +77,7 @@ namespace PasswordManager.Repositories
 
             return conn.QueryFirstOrDefault<AccountInfo>(
                 @"SELECT * FROM AccountInfos WHERE Name = @Name
-                AND ServiceInfoId = @ServiceInfoId",
+                AND ServiceInfoId = @ServiceInfoId AND DeletedAt IS NULL",
                 new
                 {
                     Name = name,
@@ -86,17 +88,18 @@ namespace PasswordManager.Repositories
         {
             using var conn = CreateConnection();
             return conn.Query<AccountInfo>(
-                "SELECT * FROM AccountInfos WHERE ServiceInfoId = @ServiceInfoId",
+                "SELECT * FROM AccountInfos WHERE ServiceInfoId = @ServiceInfoId AND DeletedAt IS NULL",
                 new { ServiceInfoId = serviceInfoId }
             );
         }
         public void Create(AccountInfo accountInfo)
         {
+            accountInfo.CreatedAt = DateTime.UtcNow;
             using var conn = CreateConnection();
 
             accountInfo.Id = (long)conn.QuerySingle<long>(
-                    @"INSERT INTO AccountInfos (Name, Password, AuthType, DisplayIndex, ServiceInfoId)
-                    VALUES (@Name, @Password, @AuthType, @DisplayIndex, @ServiceInfoId);
+                    @"INSERT INTO AccountInfos (Name, Password, AuthType, DisplayIndex, ServiceInfoId, CreatedAt, DeletedAt)
+                    VALUES (@Name, @Password, @AuthType, @DisplayIndex, @ServiceInfoId, @CreatedAt, @DeletedAt);
                     SELECT last_insert_rowid();",
                 accountInfo
             );
@@ -116,7 +119,7 @@ namespace PasswordManager.Repositories
 
             conn.Execute(
                 @"UPDATE AccountInfos
-                SET Name = @Name, Password = @Password, AuthType = @AuthType, DisplayIndex = @DisplayIndex, ServiceInfoId = @ServiceInfoId WHERE Id = @Id",
+                SET Name = @Name, Password = @Password, AuthType = @AuthType, DisplayIndex = @DisplayIndex, ServiceInfoId = @ServiceInfoId, CreatedAt = @CreatedAt, DeletedAt = @DeletedAt WHERE Id = @Id",
                 accountInfo
             );
         }

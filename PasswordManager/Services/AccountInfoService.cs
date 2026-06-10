@@ -60,13 +60,11 @@ namespace PasswordManager.Services
             accountInfo.DisplayIndex = maxDisplayIndex + 1;
             Repo.Create(accountInfo);
         }
-        public void Create(AccountInfo accountInfo, ServiceInfo serviceInfo)
-        {
-
-        }
         public void Delete(long id)
         {
-            Repo.DeleteById(id);
+            AccountInfo accountInfo = Repo.GetById(id) ?? throw new InvalidOperationException("AccountInfo not found.");
+            accountInfo.DeletedAt = DateTime.UtcNow;
+            Repo.Update(accountInfo);
         }
         public void Update(AccountInfo accountInfo)
         {

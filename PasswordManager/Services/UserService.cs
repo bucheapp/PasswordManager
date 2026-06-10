@@ -38,7 +38,13 @@ namespace PasswordManager.Services
 
         public void Delete(string name)
         {
-            _userRepository.DeleteByName(name);
+            User? user = _userRepository.GetByName(name);
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found.");
+            }
+            user.DeletedAt = DateTime.UtcNow;
+            _userRepository.Update(user);
         }
         public User? Get(string name)
         {

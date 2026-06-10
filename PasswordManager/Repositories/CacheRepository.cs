@@ -25,7 +25,9 @@ namespace PasswordManager.Repositories
                 CREATE TABLE IF NOT EXISTS Caches (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Url TEXT,
-                    ImageUrl TEXT NOT NULL
+                    ImageUrl TEXT NOT NULL,
+                    CreatedAt TEXT NOT NULL,
+                    NextUpdatedAt TEXT NOT NULL
                 );";
 
             using var cmd = new SqliteCommand(sql, conn);
@@ -49,10 +51,11 @@ namespace PasswordManager.Repositories
         }
        public void Create(Cache cache)
         {
+            cache.CreatedAt = DateTime.UtcNow;
             using var conn = CreateConnection();
 
             conn.Execute(
-                @"INSERT INTO Caches (Url, ImageUrl) VALUES (@Url, @ImageUrl)",
+                @"INSERT INTO Caches (Url, ImageUrl, CreateAt, NextUpdatedAt) VALUES (@Url, @ImageUrl, @CreateAt, @NextUpdatedAt)",
                 cache
             );
         }
@@ -68,7 +71,7 @@ namespace PasswordManager.Repositories
 
             conn.Execute(
                 @"UPDATE Caches
-                SET Url = @Url, ImageUrl = @ImageUrl WHERE Id = @Id",
+                SET Url = @Url, ImageUrl = @ImageUrl, CreateAt = @CreatedAt, NextUpdatedAt = @NextUpdatedAt WHERE Id = @Id",
                 cache
             );
         }
